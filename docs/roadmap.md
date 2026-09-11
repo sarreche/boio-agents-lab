@@ -1,0 +1,17 @@
+# Hoja de ruta incremental
+
+Cada etapa es un slice verificable; no se implementarán capas aisladas que no puedan probarse.
+
+1. **Fundación** — configuración, CI, contratos serializables, documentación y decisiones. Estado: completado.
+2. **Summarizer vertical** — fake model, provider port, structured output, runtime mínimo y ejemplo sin red.
+3. **Tools + researcher** — registry, autorización, mock search, calculator, clock y filesystem sandboxed.
+4. **LangGraph explícito** — estado, nodos, routers, max steps, retries y errores.
+5. **Checkpoints + HITL** — MemorySaver, PostgreSQL, sesión, interrupt y resume.
+6. **Subagentes** — coordinator, child runs, resultados estructurados y profundidad.
+7. **Observabilidad** — Noop/Console/Langfuse v5 con OpenTelemetry y prompt metadata.
+8. **Evaluaciones** — determinísticas, judge con fake, datasets y gate de regresión.
+9. **Deep Agents** — adapter comparativo y dataset ejecutado contra ambos runtimes.
+10. **API HTTP** — run, resume, run lookup y session lookup.
+11. **Endurecimiento** — fallos, timeouts, migraciones, cobertura, ejemplos y revisión documental completa.
+
+Los trece capítulos se ampliarán con código real en la etapa correspondiente. La CI debe permanecer verde al final de cada slice.

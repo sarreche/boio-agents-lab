@@ -1,0 +1,57 @@
+{
+  "name": "boio-agents-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A didactic TypeScript laboratory for explicit, observable, and testable AI agents.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "dev": "tsx watch src/index.ts",
+    "eval": "vitest run tests/evals --passWithNoTests",
+    "eval:regression": "vitest run tests/regression --passWithNoTests",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "start": "node dist/index.js",
+    "test": "vitest run --exclude tests/evals/** --exclude tests/regression/**",
+    "test:coverage": "vitest run --coverage --exclude tests/evals/** --exclude tests/regression/**",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@langchain/core": "1.2.10",
+    "@langchain/google-genai": "2.3.1",
+    "@langchain/groq": "1.3.1",
+    "@langchain/langgraph": "1.4.14",
+    "@langchain/langgraph-checkpoint-postgres": "1.0.5",
+    "@langchain/ollama": "1.3.0",
+    "@langchain/openai": "1.5.12",
+    "@langfuse/client": "5.11.1",
+    "@langfuse/otel": "5.11.1",
+    "@langfuse/tracing": "5.11.1",
+    "@opentelemetry/sdk-node": "0.222.0",
+    "deepagents": "1.13.4",
+    "dotenv": "17.4.2",
+    "fastify": "5.12.4",
+    "langchain": "1.5.11",
+    "pg": "8.23.0",
+    "zod": "4.6.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.2",
+    "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "5.0.0",
+    "eslint": "10.10.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.13",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0",
+    "vitest": "5.0.0"
+  }
+}
