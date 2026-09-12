@@ -31,7 +31,6 @@ Requisitos:
 
 - Node.js 22 o superior (la versión de trabajo está en `.nvmrc`).
 - npm 10 o superior.
-- Docker, solo para los ejemplos futuros de persistencia PostgreSQL.
 
 ```bash
 npm install
@@ -92,15 +91,6 @@ npm run example:langgraph
 | `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
 | `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
 
-PostgreSQL local:
-
-```bash
-docker compose up -d postgres
-docker compose ps
-```
-
-El volumen es persistente. `docker compose down` detiene el servicio sin borrar datos; no uses `down -v` salvo que quieras eliminar el volumen deliberadamente.
-
 ## Estructura objetivo
 
 ```text
@@ -112,7 +102,7 @@ src/
   tools/            contratos, autorización y built-ins sandboxed
   agents/           definiciones de agentes especializados
   subagents/        delegación, resultados y límites de profundidad
-  persistence/      checkpoints, sesiones y PostgreSQL
+  persistence/      checkpoints, sesiones y adapters durables futuros
   memory/           memoria de corto y largo plazo
   observability/    Tracer y adaptadores Console/Noop/Langfuse
   evals/            datasets, evaluadores y regresiones

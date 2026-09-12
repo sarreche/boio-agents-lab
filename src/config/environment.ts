@@ -24,8 +24,6 @@ export const environmentSchema = z.object({
   GOOGLE_API_KEY: optionalSecret,
   GROQ_API_KEY: optionalSecret,
   OLLAMA_BASE_URL: z.url().default("http://127.0.0.1:11434"),
-  DATABASE_URL: z.string().min(1).optional(),
-  DATABASE_SSL: booleanFromEnvironment,
   LANGFUSE_PUBLIC_KEY: optionalSecret,
   LANGFUSE_SECRET_KEY: optionalSecret,
   LANGFUSE_BASE_URL: z.url().default("https://cloud.langfuse.com"),

@@ -25,7 +25,7 @@ Que el laboratorio use prácticas de producción no significa convertirlo en una
 
 Las métricas mínimas serán latencia, tokens, modelo/provider, tools, errores, evaluaciones y relaciones padre-hijo. El sistema debe funcionar con `NoopTracer`; una caída de Langfuse no debe derribar una ejecución salvo que una política explícita lo exija.
 
-PostgreSQL necesitará migraciones, pool acotado, timeouts y estrategia de retención. Los checkpoints persistidos vuelven cada cambio de estado un problema de compatibilidad: nodos, channels y rutas viejas no deben borrarse sin una migración o ventana de drenaje.
+Un futuro almacenamiento durable necesitará migraciones, conexiones acotadas, timeouts y estrategia de retención. Los checkpoints persistidos vuelven cada cambio de estado un problema de compatibilidad: nodos, channels y rutas viejas no deben borrarse sin una migración o ventana de drenaje.
 
 ## Trade-offs
 
@@ -35,7 +35,7 @@ El runtime explícito ya aplica un retry acotado al nodo del modelo y serializa 
 
 ## Dónde mirar
 
-Hoy: `.env.example`, `AGENTS.md`, `docker-compose.yml`, CI, `src/graph/`, `src/core/errors.ts` y `src/tools/registry.ts`. Más adelante: adapters de persistence, clasificación de errores de provider y tracers.
+Hoy: `.env.example`, `AGENTS.md`, CI, `src/graph/`, `src/core/errors.ts` y `src/tools/registry.ts`. Más adelante: adapters de persistence, clasificación de errores de provider y tracers.
 
 ## Ejercicios
 

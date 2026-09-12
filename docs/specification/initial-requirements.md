@@ -64,7 +64,6 @@ Usar:
 - LangGraph JS
 - Deep Agents
 - Langfuse
-- PostgreSQL
 - Zod
 - Vitest
 - ESLint
@@ -173,7 +172,7 @@ src/
   persistence/
     checkpointer.ts
     memory-checkpointer.ts
-    postgres-checkpointer.ts
+    durable-checkpointer.ts
     session-store.ts
 
   memory/
@@ -393,7 +392,7 @@ Quiero entender qué abstracciones Deep Agents resuelve por nosotros.
 
 ## Persistence
 
-Implementar persistencia real.
+Implementar primero la semántica de checkpoints en memoria. La persistencia durable queda diferida hasta definir requisitos operativos.
 
 Debe existir:
 
@@ -401,9 +400,9 @@ Debe existir:
 
 Para desarrollo y tests.
 
-### PostgreSQL persistence
+### Durable persistence
 
-Para:
+El backend durable se elegirá cuando existan requisitos concretos. Deberá cubrir, si el producto lo necesita:
 
 - sessions
 - checkpoints
@@ -441,7 +440,7 @@ Información persistente recuperable entre sesiones.
 
 No crear un sistema sofisticado de memoria semántica si no es necesario.
 
-Una implementación simple basada en PostgreSQL es suficiente.
+No elegir una tecnología de almacenamiento antes de definir requisitos medibles.
 
 Documentar claramente la diferencia entre ambas.
 
@@ -740,7 +739,7 @@ No necesito todavía una interfaz gráfica.
 Usar variables de entorno para:
 
 - provider API keys
-- PostgreSQL
+- backend durable, cuando se defina
 - Langfuse
 
 Crear:
@@ -772,7 +771,7 @@ Debe explicar:
 13. Evaluations.
 14. LLM-as-a-Judge.
 15. Human-in-the-loop.
-16. Cómo correr PostgreSQL.
+16. Cómo configurar el backend durable, cuando exista.
 17. Cómo ejecutar ejemplos.
 18. Cómo correr tests.
 19. Cómo ejecutar evals.

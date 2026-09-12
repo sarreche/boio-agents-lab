@@ -20,4 +20,4 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 
 Las decisiones durables están en `adr/`. La hoja de ruta ordena slices verticales que deben dejar el repositorio ejecutable en cada etapa.
 
-La solicitud original se conserva sin modificaciones funcionales en `specification/initial-requirements.md`, para mantener trazabilidad entre requerimientos, decisiones y código.
+La especificación base vive en `specification/initial-requirements.md`. Cuando el alcance cambia, se actualiza y una ADR conserva la decisión y su motivo; Git mantiene el historial completo.

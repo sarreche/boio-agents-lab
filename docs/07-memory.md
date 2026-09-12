@@ -4,7 +4,7 @@
 
 Short-term memory es el estado contextual de una sesión/run conservado por checkpoints. Long-term memory son hechos recuperables entre sesiones, con identidad, origen y ciclo de vida propios. Mezclarlas vuelve imposible razonar sobre retención y relevancia.
 
-La primera implementación de largo plazo será PostgreSQL simple, sin vector database: escritura explícita y recuperación por claves/metadata. Solo se añadirá búsqueda semántica cuando exista un caso medible.
+El almacenamiento de largo plazo queda sin tecnología asignada. Primero se definirán operaciones, identidad, provenance, actualización y borrado; solo después se elegirá un backend según requisitos medibles. La búsqueda semántica tampoco se añadirá sin un caso que la justifique.
 
 ## Decisiones y trade-offs
 
