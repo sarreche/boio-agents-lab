@@ -44,7 +44,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/config/environment.ts`, `AGENTS.md` y las ADR. En el siguiente slice: `src/core/agent-runtime.ts`, `src/graph/state.ts` y `src/graph/create-agent-graph.ts`.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/runtime/direct-model-runtime.ts`, `src/agents/summarizer.ts`, `src/config/environment.ts`, `AGENTS.md` y las ADR. El runtime directo fija el contrato y la validación estructurada; `src/graph/state.ts` y `src/graph/create-agent-graph.ts` llegarán en el slice de LangGraph.
 
 ## Ejercicios
 

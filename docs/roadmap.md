@@ -3,7 +3,7 @@
 Cada etapa es un slice verificable; no se implementarán capas aisladas que no puedan probarse.
 
 1. **Fundación** — configuración, CI, contratos serializables, documentación y decisiones. Estado: completado.
-2. **Summarizer vertical** — fake model, provider port, structured output, runtime mínimo y ejemplo sin red.
+2. **Summarizer vertical** — fake model, provider port, structured output, runtime mínimo y ejemplo sin red. Estado: completado.
 3. **Tools + researcher** — registry, autorización, mock search, calculator, clock y filesystem sandboxed.
 4. **LangGraph explícito** — estado, nodos, routers, max steps, retries y errores.
 5. **Checkpoints + HITL** — MemorySaver, PostgreSQL, sesión, interrupt y resume.

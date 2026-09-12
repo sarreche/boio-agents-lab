@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **fundación del proyecto**. La configuración, contratos iniciales, calidad, CI y documentación arquitectónica están activos. Los runtimes y agentes descritos en la hoja de ruta todavía no están implementados; no se presentan aquí como funcionales.
+> Estado: **slice 2 — Summarizer vertical**. La configuración, contratos iniciales, provider registry, runtime directo, Summarizer estructurado, tests y documentación están activos. LangGraph, tools y persistencia continúan en la hoja de ruta y todavía no se presentan como funcionales.
 
 ## Objetivo
 
@@ -48,19 +48,35 @@ Copy-Item .env.example .env
 
 No hace falta configurar API keys para los tests. Los tests y evals locales deben usar modelos falsos por defecto.
 
+El primer ejemplo funcional tampoco usa red:
+
+```bash
+npm run example:summarizer
+```
+
+```ts
+const result = await summarizer.run({
+  input: "Text to summarize",
+  sessionId: "example-session",
+});
+
+// result.output: { summary: string; keyPoints: string[] }
+```
+
 ## Comandos
 
-| Comando                   | Propósito                                                     |
-| ------------------------- | ------------------------------------------------------------- |
-| `npm run dev`             | Ejecutar el entry point en modo watch.                        |
-| `npm run build`           | Compilar `src/` a `dist/`.                                    |
-| `npm run typecheck`       | Validar TypeScript estricto sin emitir archivos.              |
-| `npm run lint`            | Ejecutar ESLint con reglas tipadas.                           |
-| `npm run format:check`    | Comprobar formato Prettier.                                   |
-| `npm test`                | Ejecutar tests unitarios y de integración sin evals.          |
-| `npm run test:coverage`   | Ejecutar tests con umbral inicial de 80 %.                    |
-| `npm run eval`            | Ejecutar evaluadores funcionales.                             |
-| `npm run eval:regression` | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| Comando                      | Propósito                                                     |
+| ---------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                | Ejecutar el entry point en modo watch.                        |
+| `npm run build`              | Compilar `src/` a `dist/`.                                    |
+| `npm run typecheck`          | Validar TypeScript estricto sin emitir archivos.              |
+| `npm run lint`               | Ejecutar ESLint con reglas tipadas.                           |
+| `npm run format:check`       | Comprobar formato Prettier.                                   |
+| `npm test`                   | Ejecutar tests unitarios y de integración sin evals.          |
+| `npm run test:coverage`      | Ejecutar tests con umbral inicial de 80 %.                    |
+| `npm run eval`               | Ejecutar evaluadores funcionales.                             |
+| `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
 
 PostgreSQL local:
 
@@ -112,6 +128,19 @@ flowchart TD
 
 Los routers serán puros; los efectos ocurrirán en nodos nombrados. `sessionId` seleccionará continuidad/checkpoints y `runId` identificará una ejecución concreta.
 
+### Slice ejecutable actual
+
+```mermaid
+flowchart LR
+    Summarizer --> Runtime[DirectModelRuntime]
+    Runtime --> Registry[ModelProviderRegistry]
+    Registry --> Model[BaseChatModel / fake]
+    Model --> Validate[Zod output validation]
+    Validate --> Result[AgentRunResult]
+```
+
+`DirectModelRuntime` hace exactamente una llamada y establece el contrato común. No contiene un loop manual ni se describe como LangGraph. Su función es permitir estudiar y probar el límite modelo/structured-output antes de introducir estado y edges.
+
 ## Configuración y secretos
 
 `.env.example` documenta todas las variables sin contener credenciales. El entorno se valida una sola vez mediante Zod en `src/config/environment.ts`. Una integración se habilita de forma explícita; por ejemplo, Langfuse permanece desactivado si `LANGFUSE_ENABLED=false`.
@@ -136,4 +165,4 @@ Cada documento distingue el diseño acordado de la implementación ya disponible
 
 La rama principal será `main`. Se usarán ramas `feat/...`, `fix/...`, `docs/...`, `refactor/...`, `test/...` y `chore/...`, junto con Conventional Commits. La configuración completa está en [AGENTS.md](AGENTS.md) y [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Todavía no hay remoto ni repositorio GitHub creado. Ese paso se hará explícitamente con la cuenta habitual de `sarreche` cuando corresponda.
+El repositorio remoto es privado durante la construcción: `sarreche/boio-agents-lab`. Se abrirá únicamente cuando el proyecto esté completo y después de una revisión explícita.

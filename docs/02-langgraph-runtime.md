@@ -6,13 +6,17 @@ Este runtime mostrará el loop sin reimplementarlo fuera de LangGraph. Un `State
 
 Los reintentos pertenecerán al nodo que conoce el tipo de error. `maxSteps` será un guard de estado antes de volver al modelo. HITL usará interrupciones dinámicas, porque conservan estado y permiten resume con el mismo `thread_id`.
 
+## Precursor implementado
+
+`src/runtime/direct-model-runtime.ts` implementa hoy el mismo `AgentRuntime`, pero realiza una única llamada estructurada. Permite verificar provider resolution, mensajes, metadata, IDs y output Zod antes de agregar el grafo. No tiene nodos, edges, checkpoints ni tool loop; esas ausencias son intencionales y explícitas.
+
 ## Decisiones y trade-offs
 
 Se elige Graph API sobre Functional API por visualización, reducers y control explícito. Es más verbosa, pero esa verbosidad es parte del material de estudio. No se envolverá `StateGraph` en un builder genérico que esconda nodos y edges.
 
 ## Ubicación y lectura
 
-Planeado: `src/graph/state.ts`, `src/graph/create-agent-graph.ts`, `src/graph/nodes/` y `src/runtime/langgraph-runtime.ts`. Leer primero state, después nodes, routers y compile.
+Actual: `src/core/agent-runtime.ts` y `src/runtime/direct-model-runtime.ts`. Planeado: `src/graph/state.ts`, `src/graph/create-agent-graph.ts`, `src/graph/nodes/` y `src/runtime/langgraph-runtime.ts`. Leer primero el contrato/direct runtime; después state, nodes, routers y compile.
 
 ## Ejercicios
 
