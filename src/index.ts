@@ -27,8 +27,10 @@ export type {
   AgentRunOutcome,
   AgentRunRequest,
   AgentRunResult,
+  AgentRunLineage,
   AgentRuntime,
   ApprovalDecisionRecord,
+  ChildRunRecord,
   StructuredAgent,
   StructuredAgentResume,
   StructuredAgentRun,
@@ -37,6 +39,7 @@ export type {
 } from "./core/agent-runtime.js";
 export {
   AgentApprovalNotSupportedError,
+  AgentDelegationNotSupportedError,
   AgentExecutionError,
   AgentProtocolError,
   AgentResumeNotSupportedError,
@@ -54,6 +57,10 @@ export {
   InvalidToolOutputError,
   SandboxViolationError,
   SessionIdRequiredError,
+  SubagentAlreadyRegisteredError,
+  SubagentDepthLimitError,
+  SubagentNotAuthorizedError,
+  SubagentNotRegisteredError,
   StructuredOutputValidationError,
   ToolAlreadyRegisteredError,
   ToolExecutionError,
@@ -70,6 +77,14 @@ export { LangGraphRuntime } from "./runtime/langgraph-runtime.js";
 export type { LangGraphRuntimeDependencies } from "./runtime/langgraph-runtime.js";
 export { ToolCallingRuntime } from "./runtime/tool-calling-runtime.js";
 export type { ToolCallingRuntimeDependencies } from "./runtime/tool-calling-runtime.js";
+export {
+  DELEGATE_AGENT_TOOL_NAME,
+  SubagentCoordinator,
+  delegationArgumentsSchema,
+} from "./subagents/coordinator.js";
+export type { DelegateSubagentRequest } from "./subagents/coordinator.js";
+export { SubagentRegistry } from "./subagents/registry.js";
+export type { RegisteredSubagent } from "./subagents/registry.js";
 export { createCalculatorTool } from "./tools/builtins/calculator.js";
 export { createCurrentTimeTool } from "./tools/builtins/current-time.js";
 export type { CurrentTimeToolOptions } from "./tools/builtins/current-time.js";
@@ -86,6 +101,7 @@ export { routeAfterApproval, routeAfterModel, routeAfterTools } from "./graph/ro
 export {
   AGENT_GRAPH_STATE_VERSION,
   AgentGraphState,
+  childRunRecordSchema,
   humanApprovalDecisionSchema,
   recordedApprovalDecisionSchema,
   serializeAgentError,
@@ -94,6 +110,7 @@ export {
 export type {
   AgentGraphStateUpdate,
   AgentGraphStateValue,
+  GraphChildRunRecord,
   HumanApprovalDecision,
   RecordedApprovalDecision,
   SerializedAgentError,

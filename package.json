@@ -17,6 +17,7 @@
     "example:hitl": "tsx examples/human-in-the-loop.ts",
     "example:langgraph": "tsx examples/explicit-langgraph.ts",
     "example:researcher": "tsx examples/researcher.ts",
+    "example:subagents": "tsx examples/subagent-coordinator.ts",
     "example:summarizer": "tsx examples/basic-summarizer.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

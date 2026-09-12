@@ -2,7 +2,10 @@ import { FakeToolCallingModel } from "langchain";
 import { describe, expect, it } from "vitest";
 
 import { createResearcher, researcherOutputSchema } from "../../src/agents/researcher.js";
-import { AgentApprovalNotSupportedError } from "../../src/core/errors.js";
+import {
+  AgentApprovalNotSupportedError,
+  AgentDelegationNotSupportedError,
+} from "../../src/core/errors.js";
 import { ModelProviderRegistry } from "../../src/models/registry.js";
 import { StaticModelProvider } from "../../src/models/static-model-provider.js";
 import { ToolCallingRuntime } from "../../src/runtime/tool-calling-runtime.js";
@@ -107,5 +110,22 @@ describe("researcher", () => {
         request: { input: "Search only after approval." },
       }),
     ).rejects.toBeInstanceOf(AgentApprovalNotSupportedError);
+  });
+
+  it("does not let the high-level runtime ignore declared subagents", async () => {
+    const model = new FakeToolCallingModel({ toolCalls: [] });
+    const runtime = createRuntime(model);
+    const researcher = createResearcher({
+      model: { provider: "openrouter", model: "fake-tool-model", temperature: 0 },
+      runtime,
+    });
+
+    await expect(
+      runtime.runStructured({
+        definition: { ...researcher.definition, subagents: ["specialist"] },
+        outputSchema: researcherOutputSchema,
+        request: { input: "Delegate this question." },
+      }),
+    ).rejects.toBeInstanceOf(AgentDelegationNotSupportedError);
   });
 });

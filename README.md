@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 5 — checkpoints + human-in-the-loop**. `LangGraphRuntime` ya soporta `MemorySaver`, sesiones, interrupción antes de efectos, aprobación/rechazo y resume. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **slice 6 — subagentes**. `LangGraphRuntime` ya soporta checkpoints, HITL y delegación explícita con registry, allowlists, child runs estructurados y profundidad heredada. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -20,6 +20,8 @@ flowchart TD
     Runtime --> DA[DeepAgentsRuntime]
     LG --> State[Explicit Agent State]
     LG --> Checkpoint[Checkpointer]
+    LG --> Coordinator[SubagentCoordinator]
+    Coordinator --> Children[Structured child agents]
     DA --> Harness[Deep Agents harness]
     LG --> Trace[Tracer interface]
     DA --> Trace
@@ -82,6 +84,12 @@ La pausa y reanudación de una tool protegida, también sin red:
 npm run example:hitl
 ```
 
+La delegación padre → child con contexto aislado:
+
+```bash
+npm run example:subagents
+```
+
 ## Comandos
 
 | Comando                      | Propósito                                                     |
@@ -98,6 +106,7 @@ npm run example:hitl
 | `npm run example:hitl`       | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
 | `npm run example:langgraph`  | Ejecutar el StateGraph explícito sin red.                     |
 | `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
+| `npm run example:subagents`  | Ejecutar supervisor + child run estructurado sin red.         |
 | `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
 
 ## Estructura objetivo
@@ -134,10 +143,12 @@ flowchart TD
     Route -->|guarded tools| Approval[request-approval]
     Approval -->|approve| ExecuteTools
     Approval -->|reject| RejectTools[reject-tools]
+    Route -->|delegate_agent| Delegate[delegate-agent]
     Route -->|structured output| Finalize[finalize]
     Route -->|invalid protocol| Protocol[record-protocol-error]
     ExecuteTools --> Budget{step budget}
     RejectTools --> Budget
+    Delegate --> Budget
     Budget -->|available| CallModel
     Budget -->|exhausted| Limit[record-step-limit]
     Finalize --> END
@@ -148,6 +159,8 @@ flowchart TD
 Los routers son puros; los efectos ocurren en nodos nombrados. `runId` identifica una ejecución concreta. `sessionId` se mapea a `thread_id`, conserva el checkpoint en `MemorySaver` y permite reanudar el mismo run con una decisión humana validada.
 
 Las tools declaradas en `approvalRequiredTools` se detienen antes del efecto. El resultado de `run()` y `resume()` usa `status: "completed" | "interrupted"`; el caller puede presentar el payload de aprobación y luego continuar con la misma sesión. `MemorySaver` es intencionalmente local y efímero: no sobrevive reinicios ni sustituye un backend de producción.
+
+Los nombres en `AgentDefinition.subagents` forman otra allowlist deny-by-default. `SubagentCoordinator` inicia un run aislado con sus propias tools, conserva `parentRunId`/`childRunId` y aplica un techo de profundidad que no se reinicia en delegaciones anidadas. El resultado del child vuelve al padre como `ChildRunRecord`, sin copiar todo su historial.
 
 ### Slice ejecutable actual
 
@@ -199,10 +212,11 @@ Empieza por:
 1. [Arquitectura](docs/01-architecture.md)
 2. [Estado del agente](docs/03-agent-state.md)
 3. [Deep Agents](docs/09-deep-agents.md)
-4. [Consideraciones de producción](docs/13-production-considerations.md)
-5. [Hoja de ruta](docs/roadmap.md)
-6. [Decisiones arquitectónicas](docs/adr/README.md)
-7. [Especificación inicial](docs/specification/initial-requirements.md)
+4. [Subagentes](docs/08-subagents.md)
+5. [Consideraciones de producción](docs/13-production-considerations.md)
+6. [Hoja de ruta](docs/roadmap.md)
+7. [Decisiones arquitectónicas](docs/adr/README.md)
+8. [Especificación inicial](docs/specification/initial-requirements.md)
 
 Cada documento distingue el diseño acordado de la implementación ya disponible. A medida que se implemente cada slice vertical, su documento explicará el problema, funcionamiento, archivos, decisiones, trade-offs y ejercicios.
 

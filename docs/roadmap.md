@@ -7,7 +7,7 @@ Cada etapa es un slice verificable; no se implementarán capas aisladas que no p
 3. **Tools + researcher** — registry, autorización, mock search, calculator, clock y filesystem sandboxed. Estado: completado.
 4. **LangGraph explícito** — estado, nodos, routers, max steps, retries y errores. Estado: completado.
 5. **Checkpoints + HITL** — MemorySaver, sesión, interrupt y resume; backend durable diferido hasta contar con requisitos concretos. Estado: completado.
-6. **Subagentes** — coordinator, child runs, resultados estructurados y profundidad.
+6. **Subagentes** — coordinator, child runs, resultados estructurados y profundidad. Estado: completado.
 7. **Observabilidad** — Noop/Console/Langfuse v5 con OpenTelemetry y prompt metadata.
 8. **Evaluaciones** — determinísticas, judge con fake, datasets y gate de regresión.
 9. **Deep Agents** — adapter comparativo y dataset ejecutado contra ambos runtimes.

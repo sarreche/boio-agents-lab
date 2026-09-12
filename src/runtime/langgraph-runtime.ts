@@ -28,6 +28,7 @@ import {
 import { createAgentGraph } from "../graph/create-agent-graph.js";
 import { AGENT_GRAPH_STATE_VERSION, type AgentGraphStateValue } from "../graph/state.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
+import type { SubagentCoordinator } from "../subagents/coordinator.js";
 import type { ToolRegistry } from "../tools/registry.js";
 
 export interface LangGraphRuntimeDependencies {
@@ -37,6 +38,7 @@ export interface LangGraphRuntimeDependencies {
   modelRetryMaxAttempts?: number;
   createRunId?: () => string;
   now?: () => Date;
+  subagents?: SubagentCoordinator;
 }
 
 type GraphRun<TOutput extends Record<string, unknown>> =
@@ -50,6 +52,7 @@ export class LangGraphRuntime implements AgentRuntime {
   readonly #modelRetryMaxAttempts: number;
   readonly #createRunId: () => string;
   readonly #now: () => Date;
+  readonly #subagents?: SubagentCoordinator;
 
   constructor(dependencies: LangGraphRuntimeDependencies) {
     const modelRetryMaxAttempts = dependencies.modelRetryMaxAttempts ?? 3;
@@ -63,6 +66,7 @@ export class LangGraphRuntime implements AgentRuntime {
     this.#modelRetryMaxAttempts = modelRetryMaxAttempts;
     this.#createRunId = dependencies.createRunId ?? randomUUID;
     this.#now = dependencies.now ?? (() => new Date());
+    this.#subagents = dependencies.subagents;
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -74,6 +78,17 @@ export class LangGraphRuntime implements AgentRuntime {
 
     const runId = this.#createRunId();
     const startedAt = this.#now().toISOString();
+    const lineage = run.request.lineage;
+    if (
+      lineage !== undefined &&
+      (lineage.parentRunId.trim() === "" ||
+        !Number.isInteger(lineage.depth) ||
+        lineage.depth < 1 ||
+        !Number.isInteger(lineage.maxDepth) ||
+        lineage.maxDepth < lineage.depth)
+    ) {
+      throw new GraphConfigurationError("Agent run lineage is invalid.");
+    }
     const threadId = run.request.sessionId ?? runId;
     const graph = this.#createGraph(run);
     const config = this.#createConfig(run, threadId, runId);
@@ -95,6 +110,9 @@ export class LangGraphRuntime implements AgentRuntime {
           runId,
           startedAt,
           sessionId: run.request.sessionId,
+          parentRunId: lineage?.parentRunId,
+          delegationDepth: lineage?.depth ?? 0,
+          delegationMaxDepth: lineage?.maxDepth ?? run.definition.maxSubagentDepth,
           promptVersion: run.definition.promptVersion,
           messages: [new HumanMessage(run.request.input)],
           stepCount: 0,
@@ -102,6 +120,7 @@ export class LangGraphRuntime implements AgentRuntime {
           toolResults: [],
           errors: [],
           approvalDecisions: [],
+          childRuns: [],
           status: "running",
         },
         config,
@@ -168,6 +187,7 @@ export class LangGraphRuntime implements AgentRuntime {
       modelRetryMaxAttempts: this.#modelRetryMaxAttempts,
       checkpointer: this.#checkpointer,
       now: this.#now,
+      subagents: this.#subagents,
     });
   }
 
@@ -212,6 +232,7 @@ export class LangGraphRuntime implements AgentRuntime {
         stepCount: state.stepCount,
         toolCalls: state.toolCalls,
         approvalDecisions: state.approvalDecisions,
+        childRuns: state.childRuns,
         startedAt: state.startedAt,
         interruptedAt: this.#now().toISOString(),
       };
@@ -241,6 +262,7 @@ export class LangGraphRuntime implements AgentRuntime {
       stepCount: state.stepCount,
       toolCalls: state.toolCalls,
       approvalDecisions: state.approvalDecisions,
+      childRuns: state.childRuns,
       startedAt: state.startedAt,
       completedAt: this.#now().toISOString(),
     };

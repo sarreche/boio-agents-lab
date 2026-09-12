@@ -20,6 +20,7 @@ import type {
 } from "../core/agent-runtime.js";
 import {
   AgentApprovalNotSupportedError,
+  AgentDelegationNotSupportedError,
   AgentExecutionError,
   StructuredOutputValidationError,
 } from "../core/errors.js";
@@ -74,6 +75,9 @@ export class ToolCallingRuntime implements AgentRuntime {
   ): Promise<AgentRunResult<TOutput>> {
     if (run.definition.approvalRequiredTools.length > 0) {
       throw new AgentApprovalNotSupportedError("langchain-agent");
+    }
+    if (run.definition.subagents.length > 0) {
+      throw new AgentDelegationNotSupportedError("langchain-agent");
     }
 
     const runId = this.#createRunId();
@@ -148,6 +152,7 @@ export class ToolCallingRuntime implements AgentRuntime {
       stepCount: modelCallCount,
       toolCalls,
       approvalDecisions: [],
+      childRuns: [],
       startedAt,
       completedAt: this.#now().toISOString(),
     };

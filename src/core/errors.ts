@@ -37,6 +37,36 @@ export class AgentApprovalNotSupportedError extends MiniAgentsError {
   }
 }
 
+export class AgentDelegationNotSupportedError extends MiniAgentsError {
+  constructor(runtime: string) {
+    super(`Runtime "${runtime}" does not support subagent delegation.`);
+  }
+}
+
+export class SubagentAlreadyRegisteredError extends MiniAgentsError {
+  constructor(agentName: string) {
+    super(`Subagent "${agentName}" is already registered.`);
+  }
+}
+
+export class SubagentNotRegisteredError extends MiniAgentsError {
+  constructor(agentName: string) {
+    super(`Subagent "${agentName}" is not registered.`);
+  }
+}
+
+export class SubagentNotAuthorizedError extends MiniAgentsError {
+  constructor(parentAgentName: string, childAgentName: string) {
+    super(`Agent "${parentAgentName}" is not authorized to delegate to "${childAgentName}".`);
+  }
+}
+
+export class SubagentDepthLimitError extends MiniAgentsError {
+  constructor(maxDepth: number) {
+    super(`Subagent delegation would exceed the root depth limit of ${String(maxDepth)}.`);
+  }
+}
+
 export class SessionIdRequiredError extends MiniAgentsError {
   constructor(operation: "run" | "resume") {
     super(`A sessionId is required to ${operation} a checkpointed agent.`);

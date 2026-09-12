@@ -10,6 +10,7 @@ Que el laboratorio use prácticas de producción no significa convertirlo en una
 - Retries acotados con backoff y jitter solo para fallos transitorios.
 - Idempotencia para efectos que puedan repetirse al reanudar un nodo.
 - Límites de pasos y profundidad aplicados fuera del prompt.
+- Allowlist independiente para cada child y techo de profundidad heredado desde la raíz.
 - Errores tipados para provider, rate limit, timeout, tool, output, persistence y delegation.
 
 ## Seguridad
@@ -32,6 +33,8 @@ Las métricas mínimas serán latencia, tokens, modelo/provider, tools, errores,
 La durabilidad incrementa complejidad: los nodos reanudables deben ser deterministas o idempotentes. Capturar payloads completos mejora debugging, pero eleva costo y riesgo de datos; la política predeterminada será metadata útil y contenido configurable/redactado.
 
 El runtime explícito ya aplica un retry acotado al nodo del modelo, serializa errores y pausa antes de efectos protegidos. La identidad `actor` del ejemplo no está autenticada, y `MemorySaver` no es durable; ambas son fronteras explícitas, no garantías de producción. La clasificación fina de errores transitorios del provider y un timeout global del run siguen pendientes; reintentar indiscriminadamente efectos no idempotentes sería incorrecto.
+
+La delegación actual es síncrona y secuencial. Producción necesitará presupuestos agregados de tokens/tiempo entre padre e hijos, cancelación propagada, una política para children interrumpidos y reglas explícitas antes de habilitar fan-out paralelo.
 
 ## Dónde mirar
 

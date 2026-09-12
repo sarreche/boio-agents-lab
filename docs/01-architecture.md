@@ -30,6 +30,8 @@ flowchart LR
     LangGraphAdapter --> Tools
     DeepAgentsAdapter --> Tools
     LangGraphAdapter --> Persistence
+    LangGraphAdapter --> Delegation[Subagent coordinator]
+    Delegation --> RuntimePort
     LangGraphAdapter --> Tracing[Tracer port]
     DeepAgentsAdapter --> Tracing
 ```
@@ -51,7 +53,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/state.ts`, `src/graph/create-agent-graph.ts`, `src/graph/nodes/`, `src/graph/routers.ts`, los tres archivos de `src/runtime/`, `src/agents/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; la persistencia del grafo llegará en el próximo slice.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los tres archivos de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL y delegación ya son explícitos en `LangGraphRuntime`.
 
 ## Ejercicios
 

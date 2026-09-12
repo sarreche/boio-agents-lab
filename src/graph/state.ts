@@ -1,7 +1,7 @@
 import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
 import { z } from "zod";
 
-export const AGENT_GRAPH_STATE_VERSION = 2 as const;
+export const AGENT_GRAPH_STATE_VERSION = 3 as const;
 
 export const serializedAgentErrorSchema = z.object({
   node: z.string().min(1),
@@ -44,6 +44,26 @@ export const toolApprovalInterruptSchema = z.object({
   validationErrors: z.array(z.string()).optional(),
 });
 
+export const childRunRecordSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("completed"),
+    agentName: z.string().min(1),
+    parentRunId: z.string().min(1),
+    childRunId: z.string().min(1),
+    depth: z.number().int().positive(),
+    output: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    status: z.literal("interrupted"),
+    agentName: z.string().min(1),
+    parentRunId: z.string().min(1),
+    childRunId: z.string().min(1),
+    depth: z.number().int().positive(),
+    sessionId: z.string().min(1),
+    interrupts: z.array(z.object({ id: z.string().min(1), value: z.unknown() })),
+  }),
+]);
+
 function appendItems<T>(current: readonly T[], update: readonly T[]): T[] {
   return [...current, ...update];
 }
@@ -60,6 +80,9 @@ export const AgentGraphState = new StateSchema({
   runId: z.string().min(1),
   startedAt: z.iso.datetime(),
   sessionId: z.string().min(1).optional(),
+  parentRunId: z.string().min(1).optional(),
+  delegationDepth: z.number().int().nonnegative(),
+  delegationMaxDepth: z.number().int().nonnegative(),
   promptVersion: z.string().min(1),
   messages: MessagesValue,
   stepCount: new ReducedValue(z.number().int().nonnegative().default(0), {
@@ -94,6 +117,13 @@ export const AgentGraphState = new StateSchema({
       reducer: appendItems,
     },
   ),
+  childRuns: new ReducedValue(
+    z.array(childRunRecordSchema).default(() => []),
+    {
+      inputSchema: z.array(childRunRecordSchema),
+      reducer: appendItems,
+    },
+  ),
   status: z.enum(["running", "completed", "failed"]),
   failureReason: z.string().optional(),
   finalOutput: z.unknown().optional(),
@@ -105,6 +135,7 @@ export type SerializedAgentError = z.output<typeof serializedAgentErrorSchema>;
 export type HumanApprovalDecision = z.output<typeof humanApprovalDecisionSchema>;
 export type RecordedApprovalDecision = z.output<typeof recordedApprovalDecisionSchema>;
 export type ToolApprovalInterrupt = z.output<typeof toolApprovalInterruptSchema>;
+export type GraphChildRunRecord = z.output<typeof childRunRecordSchema>;
 
 export function serializeAgentError(options: {
   node: string;
