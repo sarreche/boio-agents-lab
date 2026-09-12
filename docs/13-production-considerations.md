@@ -31,9 +31,11 @@ PostgreSQL necesitará migraciones, pool acotado, timeouts y estrategia de reten
 
 La durabilidad incrementa complejidad: los nodos reanudables deben ser deterministas o idempotentes. Capturar payloads completos mejora debugging, pero eleva costo y riesgo de datos; la política predeterminada será metadata útil y contenido configurable/redactado.
 
+El runtime explícito ya aplica un retry acotado al nodo del modelo y serializa errores de tools/protocolo. La clasificación fina de errores transitorios del provider y un timeout global del run siguen pendientes; reintentar indiscriminadamente efectos no idempotentes sería incorrecto.
+
 ## Dónde mirar
 
-Hoy: `.env.example`, `AGENTS.md`, `docker-compose.yml` y CI. Más adelante: adapters de persistence, retry policy, error taxonomy y tracers.
+Hoy: `.env.example`, `AGENTS.md`, `docker-compose.yml`, CI, `src/graph/`, `src/core/errors.ts` y `src/tools/registry.ts`. Más adelante: adapters de persistence, clasificación de errores de provider y tracers.
 
 ## Ejercicios
 

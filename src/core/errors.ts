@@ -19,6 +19,16 @@ export class ModelProviderAlreadyRegisteredError extends MiniAgentsError {
 
 export class AgentExecutionError extends MiniAgentsError {}
 
+export class AgentProtocolError extends AgentExecutionError {}
+
+export class AgentStepLimitError extends AgentExecutionError {
+  constructor(maxSteps: number) {
+    super(`Agent exhausted its ${String(maxSteps)} model-step budget before producing output.`);
+  }
+}
+
+export class GraphConfigurationError extends MiniAgentsError {}
+
 export class StructuredOutputValidationError extends AgentExecutionError {
   readonly issues: readonly string[];
 
