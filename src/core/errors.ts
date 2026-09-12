@@ -29,6 +29,44 @@ export class AgentStepLimitError extends AgentExecutionError {
 
 export class GraphConfigurationError extends MiniAgentsError {}
 
+export class AgentResumeNotSupportedError extends MiniAgentsError {}
+
+export class AgentApprovalNotSupportedError extends MiniAgentsError {
+  constructor(runtime: string) {
+    super(`Runtime "${runtime}" does not support approval-required tools.`);
+  }
+}
+
+export class SessionIdRequiredError extends MiniAgentsError {
+  constructor(operation: "run" | "resume") {
+    super(`A sessionId is required to ${operation} a checkpointed agent.`);
+  }
+}
+
+export class AgentSessionNotFoundError extends MiniAgentsError {
+  constructor(sessionId: string) {
+    super(`No checkpoint exists for session "${sessionId}".`);
+  }
+}
+
+export class AgentSessionAlreadyExistsError extends MiniAgentsError {
+  constructor(sessionId: string) {
+    super(`Session "${sessionId}" already has a checkpoint. Resume it or choose a new sessionId.`);
+  }
+}
+
+export class AgentSessionNotInterruptedError extends MiniAgentsError {
+  constructor(sessionId: string) {
+    super(`Session "${sessionId}" is not waiting for a resume value.`);
+  }
+}
+
+export class AgentSessionMismatchError extends MiniAgentsError {
+  constructor(sessionId: string, expectedAgent: string, actualAgent: string) {
+    super(`Session "${sessionId}" belongs to agent "${actualAgent}", not "${expectedAgent}".`);
+  }
+}
+
 export class StructuredOutputValidationError extends AgentExecutionError {
   readonly issues: readonly string[];
 

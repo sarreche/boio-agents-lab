@@ -24,6 +24,10 @@ describe("summarizer", () => {
       input: "State is visible and infrastructure is replaceable.",
     });
 
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error("Expected the summarizer run to complete.");
+    }
     expect(result.output).toEqual({
       summary: "The source describes explicit agent architecture.",
       keyPoints: ["State is visible", "Infrastructure is replaceable"],

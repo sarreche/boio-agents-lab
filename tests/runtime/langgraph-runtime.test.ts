@@ -191,12 +191,14 @@ describe("LangGraphRuntime", () => {
       schemaVersion: AGENT_GRAPH_STATE_VERSION,
       agentName: definition.name,
       runId: "run-1",
+      startedAt: "2026-09-11T15:00:00.000Z",
       promptVersion: definition.promptVersion,
       messages: [{ role: "user", content: "Recover from a bad tool call." }],
       stepCount: 0,
       toolCalls: [],
       toolResults: [],
       errors: [],
+      approvalDecisions: [],
       status: "running",
     });
 

@@ -11,9 +11,13 @@ flowchart TD
     START --> Model[call-model]
     Model --> ModelRoute{routeAfterModel}
     ModelRoute -->|regular tool calls| Tools[execute-tools]
+    ModelRoute -->|guarded tool calls| Approval[request-approval]
+    Approval -->|approve| Tools
+    Approval -->|reject| Reject[reject-tools]
     ModelRoute -->|output tool| Finalize[finalize]
     ModelRoute -->|neither| Protocol[record-protocol-error]
     Tools --> Budget{routeAfterTools}
+    Reject --> Budget
     Budget -->|stepCount < maxSteps| Model
     Budget -->|budget exhausted| Limit[record-step-limit]
     Finalize --> END
@@ -24,6 +28,8 @@ flowchart TD
 `call-model` vincula solamente las tools autorizadas y una tool terminal derivada del nombre del agente, por ejemplo `researcher_output`. Su `retryPolicy` reintenta fallos del provider hasta el máximo configurado; un intento fallido no incrementa `stepCount` porque no produjo una transición útil.
 
 `execute-tools` procesa las llamadas secuencialmente para conservar un orden visible de efectos. Usa `ToolRegistry`, por lo que autorización, Zod y timeout siguen aplicándose. Un error de tool se serializa y vuelve como `ToolMessage`: el modelo puede corregir argumentos o elegir otro camino.
+
+Si una llamada pertenece a `approvalRequiredTools`, `request-approval` interrumpe el thread antes del efecto. Al aprobar se continúa hacia `execute-tools`; al rechazar, `reject-tools` crea respuestas de protocolo y auditoría sin invocar las tools. Un solo dictamen cubre el batch completo del mensaje para evitar ejecuciones parciales ambiguas.
 
 `finalize` exige que la tool terminal sea la única llamada del mensaje y valida otra vez sus argumentos con el output schema. Los nodos de error convierten fallos de protocolo y agotamiento de presupuesto en un final determinista. El adapter traduce un estado fallido a `AgentExecutionError`.
 
@@ -39,7 +45,7 @@ El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se manti
 - Nodos pequeños que retornan partial updates; no mutan state.
 - Routers exportados, síncronos y sin efectos para poder probarlos aisladamente.
 - Structured output como tool terminal: añade una convención, pero hace visible la decisión de terminar.
-- El grafo se compila sin checkpointer en este slice. `sessionId` ya forma parte del estado; el punto 5 definirá `thread_id`, persistencia e interrupt/resume.
+- `LangGraphRuntime` compila con un `MemorySaver` por defecto y acepta otro `BaseCheckpointSaver` inyectado. `sessionId` es el `thread_id`; los otros runtimes no ofrecen resume.
 - `ToolCallingRuntime` permanece como referencia de alto nivel; no se elimina al agregar la variante explícita.
 
 ## Dónde leer
@@ -50,10 +56,11 @@ El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se manti
 4. `src/graph/nodes/execute-tools.ts`
 5. `src/graph/nodes/finalize.ts`
 6. `src/graph/nodes/record-errors.ts`
-7. `src/graph/create-agent-graph.ts`
-8. `src/runtime/langgraph-runtime.ts`
-9. `tests/graph/` y `tests/runtime/langgraph-runtime.test.ts`
-10. `examples/explicit-langgraph.ts`
+7. `src/graph/nodes/request-approval.ts` y `reject-tools.ts`
+8. `src/graph/create-agent-graph.ts`
+9. `src/runtime/langgraph-runtime.ts`
+10. `tests/graph/`, `tests/runtime/langgraph-runtime.test.ts` y `langgraph-hitl.test.ts`
+11. `examples/explicit-langgraph.ts` y `human-in-the-loop.ts`
 
 ## Ejercicios
 
@@ -69,3 +76,5 @@ El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se manti
 - [LangGraph Graph API overview](https://docs.langchain.com/oss/javascript/langgraph/graph-api)
 - [LangGraph quickstart](https://docs.langchain.com/oss/javascript/langgraph/quickstart)
 - [Thinking in LangGraph](https://docs.langchain.com/oss/javascript/langgraph/thinking-in-langgraph)
+- [LangGraph persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+- [LangGraph interrupts](https://docs.langchain.com/oss/javascript/langgraph/interrupts)

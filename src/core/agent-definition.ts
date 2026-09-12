@@ -23,18 +23,28 @@ const uniqueNameListSchema = z
  * Runtime instances, model clients, and tool functions intentionally do not
  * belong here: persisted definitions should remain data, not live objects.
  */
-export const agentDefinitionSchema = z.object({
-  name: z.string().regex(/^[a-z][a-z0-9-]*$/),
-  description: z.string().min(1),
-  systemPrompt: z.string().min(1),
-  promptVersion: z.string().min(1).default("1.0.0"),
-  model: modelConfigSchema,
-  tools: uniqueNameListSchema.default([]),
-  subagents: uniqueNameListSchema.default([]),
-  maxSteps: z.number().int().positive().default(10),
-  maxSubagentDepth: z.number().int().nonnegative().default(3),
-  metadata: z.record(z.string(), z.unknown()).default({}),
-});
+export const agentDefinitionSchema = z
+  .object({
+    name: z.string().regex(/^[a-z][a-z0-9-]*$/),
+    description: z.string().min(1),
+    systemPrompt: z.string().min(1),
+    promptVersion: z.string().min(1).default("1.0.0"),
+    model: modelConfigSchema,
+    tools: uniqueNameListSchema.default([]),
+    approvalRequiredTools: uniqueNameListSchema.default([]),
+    subagents: uniqueNameListSchema.default([]),
+    maxSteps: z.number().int().positive().default(10),
+    maxSubagentDepth: z.number().int().nonnegative().default(3),
+    metadata: z.record(z.string(), z.unknown()).default({}),
+  })
+  .refine(
+    (definition) =>
+      definition.approvalRequiredTools.every((toolName) => definition.tools.includes(toolName)),
+    {
+      message: "Approval-required tools must also appear in the agent tool allowlist.",
+      path: ["approvalRequiredTools"],
+    },
+  );
 
 export type AgentDefinitionInput = z.input<typeof agentDefinitionSchema>;
 export type AgentDefinition = z.output<typeof agentDefinitionSchema>;

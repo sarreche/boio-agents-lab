@@ -44,4 +44,17 @@ describe("defineAgent", () => {
       }),
     ).toThrow();
   });
+
+  it("requires guarded tools to belong to the tool allowlist", () => {
+    expect(() =>
+      defineAgent({
+        name: "invalid-approval-policy",
+        description: "Invalid guarded tool policy",
+        systemPrompt: "No-op",
+        model: { provider: "openai", model: "test-model" },
+        tools: [],
+        approvalRequiredTools: ["publish_draft"],
+      }),
+    ).toThrow("Approval-required tools must also appear in the agent tool allowlist");
+  });
 });

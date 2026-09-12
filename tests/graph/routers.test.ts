@@ -1,7 +1,7 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { describe, expect, it } from "vitest";
 
-import { routeAfterModel, routeAfterTools } from "../../src/graph/routers.js";
+import { routeAfterApproval, routeAfterModel, routeAfterTools } from "../../src/graph/routers.js";
 import {
   AGENT_GRAPH_STATE_VERSION,
   serializeAgentError,
@@ -16,6 +16,7 @@ function stateWith(
     schemaVersion: AGENT_GRAPH_STATE_VERSION,
     agentName: "test-agent",
     runId: "run-1",
+    startedAt: "2026-09-12T12:00:00.000Z",
     sessionId: undefined,
     promptVersion: "1.0.0",
     messages,
@@ -23,6 +24,7 @@ function stateWith(
     toolCalls: [],
     toolResults: [],
     errors: [],
+    approvalDecisions: [],
     status: "running",
     failureReason: undefined,
     finalOutput: undefined,
@@ -39,6 +41,48 @@ describe("explicit graph routers", () => {
     ]);
 
     expect(routeAfterModel(state, "test_agent_output")).toBe("execute-tools");
+  });
+
+  it("routes guarded tool calls through human approval", () => {
+    const state = stateWith([
+      new AIMessage({
+        content: "",
+        tool_calls: [{ name: "publish_draft", args: { text: "hello" }, id: "call-1" }],
+      }),
+    ]);
+
+    expect(routeAfterModel(state, "test_agent_output", ["publish_draft"])).toBe("request-approval");
+  });
+
+  it("routes approval decisions deterministically", () => {
+    const baseState = stateWith([]);
+    expect(
+      routeAfterApproval({
+        ...baseState,
+        approvalDecisions: [
+          {
+            decision: "approve",
+            actor: "reviewer",
+            decidedAt: "2026-09-12T12:01:00.000Z",
+            toolCallIds: ["call-1"],
+          },
+        ],
+      }),
+    ).toBe("execute-tools");
+    expect(
+      routeAfterApproval({
+        ...baseState,
+        approvalDecisions: [
+          {
+            decision: "reject",
+            actor: "reviewer",
+            reason: "Needs changes",
+            decidedAt: "2026-09-12T12:01:00.000Z",
+            toolCallIds: ["call-1"],
+          },
+        ],
+      }),
+    ).toBe("reject-tools");
   });
 
   it("routes the terminal structured-output tool to finalize", () => {

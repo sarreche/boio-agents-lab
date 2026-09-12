@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { defineAgent } from "../../src/core/agent-definition.js";
-import { StructuredOutputValidationError } from "../../src/core/errors.js";
+import { createStructuredAgent } from "../../src/core/agent-runtime.js";
+import {
+  AgentApprovalNotSupportedError,
+  AgentResumeNotSupportedError,
+  StructuredOutputValidationError,
+} from "../../src/core/errors.js";
 import { ModelProviderRegistry } from "../../src/models/registry.js";
 import { StaticModelProvider } from "../../src/models/static-model-provider.js";
 import { DirectModelRuntime } from "../../src/runtime/direct-model-runtime.js";
@@ -34,6 +39,7 @@ describe("DirectModelRuntime", () => {
     });
 
     expect(result).toEqual({
+      status: "completed",
       agentName: "test-agent",
       runId: "run-123",
       sessionId: "session-123",
@@ -41,6 +47,7 @@ describe("DirectModelRuntime", () => {
       output: { value: "validated" },
       stepCount: 1,
       toolCalls: [],
+      approvalDecisions: [],
       startedAt: "2026-09-11T12:00:00.000Z",
       completedAt: "2026-09-11T12:00:00.000Z",
     });
@@ -55,5 +62,34 @@ describe("DirectModelRuntime", () => {
     await expect(
       runtime.runStructured({ definition, outputSchema, request: { input: "Return a value" } }),
     ).rejects.toBeInstanceOf(StructuredOutputValidationError);
+  });
+
+  it("rejects resume when the selected runtime has no checkpoint support", async () => {
+    const runtime = new DirectModelRuntime({
+      providers: new ModelProviderRegistry([
+        new StaticModelProvider("openrouter", fakeModel().structuredResponse({ value: "unused" })),
+      ]),
+    });
+    const agent = createStructuredAgent({ definition, outputSchema, runtime });
+
+    await expect(
+      agent.resume({ sessionId: "session-123", value: { decision: "approve" } }),
+    ).rejects.toBeInstanceOf(AgentResumeNotSupportedError);
+  });
+
+  it("does not silently ignore an approval policy it cannot enforce", async () => {
+    const runtime = new DirectModelRuntime({
+      providers: new ModelProviderRegistry([
+        new StaticModelProvider("openrouter", fakeModel().structuredResponse({ value: "unused" })),
+      ]),
+    });
+
+    await expect(
+      runtime.runStructured({
+        definition: { ...definition, tools: ["effect"], approvalRequiredTools: ["effect"] },
+        outputSchema,
+        request: { input: "Do not bypass approval." },
+      }),
+    ).rejects.toBeInstanceOf(AgentApprovalNotSupportedError);
   });
 });
