@@ -79,7 +79,7 @@ npm run eval:regression
 npm run build
 ```
 
-Tests must not require network access, API keys, Langfuse, or a developer's PostgreSQL instance unless explicitly marked as opt-in integration tests. Use fake models, deterministic clocks, and in-memory persistence by default.
+Tests must not require network access, API keys, Langfuse, or an external database unless explicitly marked as opt-in integration tests. Use fake models, deterministic clocks, and in-memory persistence by default.
 
 Every behavior change needs tests covering the successful path and the important boundary/failure path. Regression eval thresholds must cause a non-zero exit code when violated.
 
