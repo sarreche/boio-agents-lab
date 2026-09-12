@@ -77,6 +77,7 @@ export class DirectModelRuntime implements AgentRuntime {
       runtime: "direct-model",
       output: validation.data,
       stepCount: 1,
+      toolCalls: [],
       startedAt,
       completedAt: this.#now().toISOString(),
     };

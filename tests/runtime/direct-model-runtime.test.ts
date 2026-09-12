@@ -40,6 +40,7 @@ describe("DirectModelRuntime", () => {
       runtime: "direct-model",
       output: { value: "validated" },
       stepCount: 1,
+      toolCalls: [],
       startedAt: "2026-09-11T12:00:00.000Z",
       completedAt: "2026-09-11T12:00:00.000Z",
     });
