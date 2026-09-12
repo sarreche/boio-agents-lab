@@ -48,6 +48,7 @@ describe("DirectModelRuntime", () => {
       stepCount: 1,
       toolCalls: [],
       approvalDecisions: [],
+      childRuns: [],
       startedAt: "2026-09-11T12:00:00.000Z",
       completedAt: "2026-09-11T12:00:00.000Z",
     });
@@ -91,5 +92,21 @@ describe("DirectModelRuntime", () => {
         request: { input: "Do not bypass approval." },
       }),
     ).rejects.toBeInstanceOf(AgentApprovalNotSupportedError);
+  });
+
+  it("does not silently ignore a delegation policy it cannot enforce", async () => {
+    const runtime = new DirectModelRuntime({
+      providers: new ModelProviderRegistry([
+        new StaticModelProvider("openrouter", fakeModel().structuredResponse({ value: "unused" })),
+      ]),
+    });
+
+    await expect(
+      runtime.runStructured({
+        definition: { ...definition, subagents: ["researcher"] },
+        outputSchema,
+        request: { input: "Delegate this task." },
+      }),
+    ).rejects.toThrow('Runtime "direct-model" does not support subagent delegation.');
   });
 });

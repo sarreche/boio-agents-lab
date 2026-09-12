@@ -12,12 +12,14 @@ flowchart TD
     Model --> ModelRoute{routeAfterModel}
     ModelRoute -->|regular tool calls| Tools[execute-tools]
     ModelRoute -->|guarded tool calls| Approval[request-approval]
+    ModelRoute -->|delegate_agent| Delegate[delegate-agent]
     Approval -->|approve| Tools
     Approval -->|reject| Reject[reject-tools]
     ModelRoute -->|output tool| Finalize[finalize]
     ModelRoute -->|neither| Protocol[record-protocol-error]
     Tools --> Budget{routeAfterTools}
     Reject --> Budget
+    Delegate --> Budget
     Budget -->|stepCount < maxSteps| Model
     Budget -->|budget exhausted| Limit[record-step-limit]
     Finalize --> END
@@ -30,6 +32,8 @@ flowchart TD
 `execute-tools` procesa las llamadas secuencialmente para conservar un orden visible de efectos. Usa `ToolRegistry`, por lo que autorización, Zod y timeout siguen aplicándose. Un error de tool se serializa y vuelve como `ToolMessage`: el modelo puede corregir argumentos o elegir otro camino.
 
 Si una llamada pertenece a `approvalRequiredTools`, `request-approval` interrumpe el thread antes del efecto. Al aprobar se continúa hacia `execute-tools`; al rechazar, `reject-tools` crea respuestas de protocolo y auditoría sin invocar las tools. Un solo dictamen cubre el batch completo del mensaje para evitar ejecuciones parciales ambiguas.
+
+Si el modelo llama la tool sintética `delegate_agent`, el router exige que sea la única llamada del mensaje y dirige a `delegate-agent`. Ese nodo ejecuta un child mediante el coordinator y agrega su hand-off a `childRuns`; luego el supervisor vuelve a `call-model`. La ejecución del hijo no se mezcla con `execute-tools` porque posee otra definición y otra allowlist.
 
 `finalize` exige que la tool terminal sea la única llamada del mensaje y valida otra vez sus argumentos con el output schema. Los nodos de error convierten fallos de protocolo y agotamiento de presupuesto en un final determinista. El adapter traduce un estado fallido a `AgentExecutionError`.
 
@@ -58,9 +62,10 @@ El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se manti
 6. `src/graph/nodes/record-errors.ts`
 7. `src/graph/nodes/request-approval.ts` y `reject-tools.ts`
 8. `src/graph/create-agent-graph.ts`
-9. `src/runtime/langgraph-runtime.ts`
-10. `tests/graph/`, `tests/runtime/langgraph-runtime.test.ts` y `langgraph-hitl.test.ts`
-11. `examples/explicit-langgraph.ts` y `human-in-the-loop.ts`
+9. `src/graph/nodes/delegate-agent.ts` y `src/subagents/`
+10. `src/runtime/langgraph-runtime.ts`
+11. `tests/graph/` y `tests/runtime/`
+12. `examples/explicit-langgraph.ts`, `human-in-the-loop.ts` y `subagent-coordinator.ts`
 
 ## Ejercicios
 

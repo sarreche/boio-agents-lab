@@ -7,6 +7,7 @@ export interface AgentRunRequest {
   input: string;
   sessionId?: string;
   metadata?: Readonly<Record<string, unknown>>;
+  lineage?: AgentRunLineage;
 }
 
 export interface AgentResumeRequest {
@@ -30,6 +31,32 @@ export interface ApprovalDecisionRecord {
   toolCallIds: readonly string[];
 }
 
+/** Delegation lineage propagated independently from arbitrary trace metadata. */
+export interface AgentRunLineage {
+  parentRunId: string;
+  depth: number;
+  maxDepth: number;
+}
+
+export type ChildRunRecord =
+  | {
+      status: "completed";
+      agentName: string;
+      parentRunId: string;
+      childRunId: string;
+      depth: number;
+      output: Readonly<Record<string, unknown>>;
+    }
+  | {
+      status: "interrupted";
+      agentName: string;
+      parentRunId: string;
+      childRunId: string;
+      depth: number;
+      sessionId: string;
+      interrupts: readonly AgentInterruptRecord[];
+    };
+
 export interface AgentRunResult<TOutput extends Record<string, unknown>> {
   status: "completed";
   agentName: string;
@@ -40,6 +67,7 @@ export interface AgentRunResult<TOutput extends Record<string, unknown>> {
   stepCount: number;
   toolCalls: readonly ToolCallRecord[];
   approvalDecisions: readonly ApprovalDecisionRecord[];
+  childRuns: readonly ChildRunRecord[];
   startedAt: string;
   completedAt: string;
 }
@@ -59,6 +87,7 @@ export interface AgentInterruptedResult {
   stepCount: number;
   toolCalls: readonly ToolCallRecord[];
   approvalDecisions: readonly ApprovalDecisionRecord[];
+  childRuns: readonly ChildRunRecord[];
   startedAt: string;
   interruptedAt: string;
 }

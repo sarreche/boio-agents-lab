@@ -192,6 +192,9 @@ describe("LangGraphRuntime", () => {
       agentName: definition.name,
       runId: "run-1",
       startedAt: "2026-09-11T15:00:00.000Z",
+      parentRunId: undefined,
+      delegationDepth: 0,
+      delegationMaxDepth: definition.maxSubagentDepth,
       promptVersion: definition.promptVersion,
       messages: [{ role: "user", content: "Recover from a bad tool call." }],
       stepCount: 0,
@@ -199,6 +202,7 @@ describe("LangGraphRuntime", () => {
       toolResults: [],
       errors: [],
       approvalDecisions: [],
+      childRuns: [],
       status: "running",
     });
 

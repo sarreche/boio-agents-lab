@@ -18,6 +18,9 @@ function stateWith(
     runId: "run-1",
     startedAt: "2026-09-12T12:00:00.000Z",
     sessionId: undefined,
+    parentRunId: undefined,
+    delegationDepth: 0,
+    delegationMaxDepth: 3,
     promptVersion: "1.0.0",
     messages,
     stepCount,
@@ -25,6 +28,7 @@ function stateWith(
     toolResults: [],
     errors: [],
     approvalDecisions: [],
+    childRuns: [],
     status: "running",
     failureReason: undefined,
     finalOutput: undefined,
@@ -52,6 +56,35 @@ describe("explicit graph routers", () => {
     ]);
 
     expect(routeAfterModel(state, "test_agent_output", ["publish_draft"])).toBe("request-approval");
+  });
+
+  it("routes one delegation call and rejects mixed batches", () => {
+    const delegation = { name: "delegate_agent", args: { agentName: "researcher", task: "go" } };
+
+    expect(
+      routeAfterModel(
+        stateWith([new AIMessage({ content: "", tool_calls: [delegation] })]),
+        "test_agent_output",
+        [],
+        "delegate_agent",
+      ),
+    ).toBe("delegate-agent");
+    expect(
+      routeAfterModel(
+        stateWith([
+          new AIMessage({
+            content: "",
+            tool_calls: [
+              delegation,
+              { name: "mock_search", args: { query: "mixed" }, id: "search-1" },
+            ],
+          }),
+        ]),
+        "test_agent_output",
+        [],
+        "delegate_agent",
+      ),
+    ).toBe("record-protocol-error");
   });
 
   it("routes approval decisions deterministically", () => {

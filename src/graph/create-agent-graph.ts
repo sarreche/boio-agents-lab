@@ -5,9 +5,15 @@ import { END, START, StateGraph, type BaseCheckpointSaver } from "@langchain/lan
 import type { AgentDefinition } from "../core/agent-definition.js";
 import type { StructuredOutputSchema } from "../core/agent-runtime.js";
 import { GraphConfigurationError } from "../core/errors.js";
+import {
+  DELEGATE_AGENT_TOOL_NAME,
+  delegationArgumentsSchema,
+  type SubagentCoordinator,
+} from "../subagents/coordinator.js";
 import type { ToolRegistry } from "../tools/registry.js";
 import { createCallModelNode } from "./nodes/call-model.js";
 import { createExecuteToolsNode } from "./nodes/execute-tools.js";
+import { createDelegateAgentNode } from "./nodes/delegate-agent.js";
 import { createFinalizeNode } from "./nodes/finalize.js";
 import { createRecordStepLimitNode, recordProtocolErrorNode } from "./nodes/record-errors.js";
 import { rejectToolsNode } from "./nodes/reject-tools.js";
@@ -28,11 +34,22 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
   modelRetryMaxAttempts: number;
   checkpointer?: BaseCheckpointSaver;
   now?: () => Date;
+  subagents?: SubagentCoordinator;
 }) {
   const structuredOutputToolName = getStructuredOutputToolName(options.definition.name);
   if (options.definition.tools.includes(structuredOutputToolName)) {
     throw new GraphConfigurationError(
       `Tool "${structuredOutputToolName}" collides with the reserved structured-output tool.`,
+    );
+  }
+  if (options.definition.tools.includes(DELEGATE_AGENT_TOOL_NAME)) {
+    throw new GraphConfigurationError(
+      `Tool "${DELEGATE_AGENT_TOOL_NAME}" is reserved for subagent delegation.`,
+    );
+  }
+  if (options.definition.subagents.length > 0 && options.subagents === undefined) {
+    throw new GraphConfigurationError(
+      `Agent "${options.definition.name}" declares subagents but no coordinator was configured.`,
     );
   }
 
@@ -45,13 +62,25 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
       schema: options.outputSchema,
     },
   );
+  const delegationTool =
+    options.definition.subagents.length === 0 || options.subagents === undefined
+      ? undefined
+      : createLangChainTool(() => "Delegation is executed by the explicit graph node.", {
+          name: DELEGATE_AGENT_TOOL_NAME,
+          description: `Delegate one isolated task to an authorized subagent. Available: ${options.subagents.describeAuthorized(options.definition.subagents)}`,
+          schema: delegationArgumentsSchema,
+        });
+  const modelTools =
+    delegationTool === undefined
+      ? [...authorizedTools, structuredOutputTool]
+      : [...authorizedTools, delegationTool, structuredOutputTool];
 
   const graph = new StateGraph(AgentGraphState)
     .addNode(
       "call-model",
       createCallModelNode({
         model: options.model,
-        tools: [...authorizedTools, structuredOutputTool],
+        tools: modelTools,
         systemPrompt: options.definition.systemPrompt,
       }),
       {
@@ -70,6 +99,17 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
       "finalize",
       createFinalizeNode({ outputSchema: options.outputSchema, structuredOutputToolName }),
     )
+    .addNode(
+      "delegate-agent",
+      options.subagents === undefined
+        ? () => {
+            throw new GraphConfigurationError("Subagent coordinator is unavailable.");
+          }
+        : createDelegateAgentNode({
+            coordinator: options.subagents,
+            parentDefinition: options.definition,
+          }),
+    )
     .addNode("request-approval", createRequestApprovalNode(options.now ?? (() => new Date())))
     .addNode("reject-tools", rejectToolsNode)
     .addNode("record-protocol-error", recordProtocolErrorNode)
@@ -78,10 +118,20 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
     .addConditionalEdges(
       "call-model",
       (state) =>
-        routeAfterModel(state, structuredOutputToolName, options.definition.approvalRequiredTools),
-      ["execute-tools", "request-approval", "finalize", "record-protocol-error"],
+        routeAfterModel(
+          state,
+          structuredOutputToolName,
+          options.definition.approvalRequiredTools,
+          delegationTool?.name,
+        ),
+      ["execute-tools", "request-approval", "delegate-agent", "finalize", "record-protocol-error"],
     )
     .addConditionalEdges("request-approval", routeAfterApproval, ["execute-tools", "reject-tools"])
+    .addConditionalEdges(
+      "delegate-agent",
+      (state) => routeAfterTools(state, options.definition.maxSteps),
+      ["call-model", "record-step-limit"],
+    )
     .addConditionalEdges(
       "execute-tools",
       (state) => routeAfterTools(state, options.definition.maxSteps),

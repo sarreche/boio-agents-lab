@@ -5,6 +5,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { AgentRunResult, AgentRuntime, StructuredAgentRun } from "../core/agent-runtime.js";
 import {
   AgentApprovalNotSupportedError,
+  AgentDelegationNotSupportedError,
   AgentExecutionError,
   StructuredOutputValidationError,
 } from "../core/errors.js";
@@ -38,6 +39,9 @@ export class DirectModelRuntime implements AgentRuntime {
   ): Promise<AgentRunResult<TOutput>> {
     if (run.definition.approvalRequiredTools.length > 0) {
       throw new AgentApprovalNotSupportedError("direct-model");
+    }
+    if (run.definition.subagents.length > 0) {
+      throw new AgentDelegationNotSupportedError("direct-model");
     }
 
     const runId = this.#createRunId();
@@ -88,6 +92,7 @@ export class DirectModelRuntime implements AgentRuntime {
       stepCount: 1,
       toolCalls: [],
       approvalDecisions: [],
+      childRuns: [],
       startedAt,
       completedAt: this.#now().toISOString(),
     };
