@@ -51,7 +51,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/runtime/direct-model-runtime.ts`, `src/runtime/tool-calling-runtime.ts`, `src/agents/summarizer.ts`, `src/agents/researcher.ts`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los dos runtimes fijan el contrato y ofrecen referencias ejecutables; `src/graph/state.ts` y `src/graph/create-agent-graph.ts` llegarán en el slice de LangGraph explícito.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/state.ts`, `src/graph/create-agent-graph.ts`, `src/graph/nodes/`, `src/graph/routers.ts`, los tres archivos de `src/runtime/`, `src/agents/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; la persistencia del grafo llegará en el próximo slice.
 
 ## Ejercicios
 

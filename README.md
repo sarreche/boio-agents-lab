@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 3 — Tools + Researcher**. Ya están activos los contratos, providers, runtime directo, runtime de tool calling, Summarizer, Researcher y cinco tools sandboxed. El StateGraph explícito y la persistencia continúan en la hoja de ruta.
+> Estado: **slice 4 — LangGraph explícito**. Ya están activos el estado versionado, nodos y routers visibles, límites de pasos, retries del modelo, errores serializados, tools sandboxed, Summarizer y Researcher. Checkpoints y persistencia continúan en la hoja de ruta.
 
 ## Objetivo
 
@@ -69,6 +69,12 @@ El Researcher demuestra la decisión model-driven de buscar o terminar:
 npm run example:researcher
 ```
 
+La misma definición ejecutada por el grafo explícito:
+
+```bash
+npm run example:langgraph
+```
+
 ## Comandos
 
 | Comando                      | Propósito                                                     |
@@ -82,6 +88,7 @@ npm run example:researcher
 | `npm run test:coverage`      | Ejecutar tests con umbral inicial de 80 %.                    |
 | `npm run eval`               | Ejecutar evaluadores funcionales.                             |
 | `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| `npm run example:langgraph`  | Ejecutar el StateGraph explícito sin red.                     |
 | `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
 | `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
 
@@ -118,22 +125,24 @@ docs/               material de estudio y decisiones arquitectónicas
 
 Las carpetas se crean cuando contienen una implementación real; la estructura completa no se rellena con archivos vacíos.
 
-## Flujo previsto del runtime explícito
+## Flujo implementado del runtime explícito
 
 ```mermaid
 flowchart TD
     START --> CallModel[call-model]
     CallModel --> Route{route-after-model}
     Route -->|tool calls| ExecuteTools[execute-tools]
-    Route -->|delegation| Delegate[delegate-agent]
-    Route -->|final answer| Finalize[finalize]
-    ExecuteTools --> CallModel
-    Delegate --> CallModel
+    Route -->|structured output| Finalize[finalize]
+    Route -->|invalid protocol| Protocol[record-protocol-error]
+    ExecuteTools --> Budget{step budget}
+    Budget -->|available| CallModel
+    Budget -->|exhausted| Limit[record-step-limit]
     Finalize --> END
-    CallModel -->|max steps/error policy| Finalize
+    Protocol --> END
+    Limit --> END
 ```
 
-Los routers serán puros; los efectos ocurrirán en nodos nombrados. `sessionId` seleccionará continuidad/checkpoints y `runId` identificará una ejecución concreta.
+Los routers son puros; los efectos ocurren en nodos nombrados. `runId` identifica una ejecución concreta y `sessionId` queda en el estado para el checkpointer que se añadirá en el punto 5.
 
 ### Slice ejecutable actual
 
@@ -148,7 +157,7 @@ flowchart LR
 
 `DirectModelRuntime` hace exactamente una llamada y establece el contrato común. No contiene un loop manual ni se describe como LangGraph. Su función es permitir estudiar y probar el límite modelo/structured-output antes de introducir estado y edges.
 
-`ToolCallingRuntime` usa `createAgent` de LangChain, que se ejecuta sobre LangGraph. Esto evita mantener un loop manual transitorio. El siguiente slice implementará el grafo equivalente con nodos, estado y edges visibles.
+`ToolCallingRuntime` usa el harness `createAgent`; `LangGraphRuntime` construye el flujo equivalente con `StateGraph`, `StateSchema`, reducers, nodos y edges visibles. Ambos implementan el mismo contrato y permiten comparar abstracción con control explícito.
 
 ## Tools y autorización
 

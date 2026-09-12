@@ -5,7 +5,7 @@ Cada etapa es un slice verificable; no se implementarán capas aisladas que no p
 1. **Fundación** — configuración, CI, contratos serializables, documentación y decisiones. Estado: completado.
 2. **Summarizer vertical** — fake model, provider port, structured output, runtime mínimo y ejemplo sin red. Estado: completado.
 3. **Tools + researcher** — registry, autorización, mock search, calculator, clock y filesystem sandboxed. Estado: completado.
-4. **LangGraph explícito** — estado, nodos, routers, max steps, retries y errores.
+4. **LangGraph explícito** — estado, nodos, routers, max steps, retries y errores. Estado: completado.
 5. **Checkpoints + HITL** — MemorySaver, PostgreSQL, sesión, interrupt y resume.
 6. **Subagentes** — coordinator, child runs, resultados estructurados y profundidad.
 7. **Observabilidad** — Noop/Console/Langfuse v5 con OpenTelemetry y prompt metadata.

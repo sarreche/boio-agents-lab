@@ -31,6 +31,9 @@ export type {
 } from "./core/agent-runtime.js";
 export {
   AgentExecutionError,
+  AgentProtocolError,
+  AgentStepLimitError,
+  GraphConfigurationError,
   MiniAgentsError,
   ModelProviderAlreadyRegisteredError,
   ModelProviderNotRegisteredError,
@@ -50,6 +53,8 @@ export { ModelProviderRegistry } from "./models/registry.js";
 export { StaticModelProvider } from "./models/static-model-provider.js";
 export { DirectModelRuntime } from "./runtime/direct-model-runtime.js";
 export type { DirectModelRuntimeDependencies } from "./runtime/direct-model-runtime.js";
+export { LangGraphRuntime } from "./runtime/langgraph-runtime.js";
+export type { LangGraphRuntimeDependencies } from "./runtime/langgraph-runtime.js";
 export { ToolCallingRuntime } from "./runtime/tool-calling-runtime.js";
 export type { ToolCallingRuntimeDependencies } from "./runtime/tool-calling-runtime.js";
 export { createCalculatorTool } from "./tools/builtins/calculator.js";
@@ -63,3 +68,11 @@ export { ToolRegistry } from "./tools/registry.js";
 export type { ExecuteToolRequest, ToolRegistryOptions } from "./tools/registry.js";
 export { defineTool } from "./tools/tool.js";
 export type { RegisteredTool, ToolDefinition, ToolExecutionContext } from "./tools/tool.js";
+export { createAgentGraph, getStructuredOutputToolName } from "./graph/create-agent-graph.js";
+export { routeAfterModel, routeAfterTools } from "./graph/routers.js";
+export { AGENT_GRAPH_STATE_VERSION, AgentGraphState, serializeAgentError } from "./graph/state.js";
+export type {
+  AgentGraphStateUpdate,
+  AgentGraphStateValue,
+  SerializedAgentError,
+} from "./graph/state.js";
