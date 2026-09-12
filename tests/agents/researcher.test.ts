@@ -1,7 +1,8 @@
 import { FakeToolCallingModel } from "langchain";
 import { describe, expect, it } from "vitest";
 
-import { createResearcher } from "../../src/agents/researcher.js";
+import { createResearcher, researcherOutputSchema } from "../../src/agents/researcher.js";
+import { AgentApprovalNotSupportedError } from "../../src/core/errors.js";
 import { ModelProviderRegistry } from "../../src/models/registry.js";
 import { StaticModelProvider } from "../../src/models/static-model-provider.js";
 import { ToolCallingRuntime } from "../../src/runtime/tool-calling-runtime.js";
@@ -52,6 +53,10 @@ describe("researcher", () => {
 
     const result = await researcher.run({ input: "Why is explicit agent state useful?" });
 
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error("Expected the researcher run to complete.");
+    }
     expect(result.output).toEqual(researchOutput);
     expect(result.toolCalls).toEqual([
       {
@@ -79,7 +84,28 @@ describe("researcher", () => {
 
     const result = await researcher.run({ input: "Using only this prompt: the value is 42." });
 
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error("Expected the researcher run to complete.");
+    }
     expect(result.output).toEqual(directOutput);
     expect(result.toolCalls).toEqual([]);
+  });
+
+  it("does not let the high-level runtime bypass a guarded tool policy", async () => {
+    const model = new FakeToolCallingModel({ toolCalls: [] });
+    const runtime = createRuntime(model);
+    const researcher = createResearcher({
+      model: { provider: "openrouter", model: "fake-tool-model", temperature: 0 },
+      runtime,
+    });
+
+    await expect(
+      runtime.runStructured({
+        definition: { ...researcher.definition, approvalRequiredTools: ["mock_search"] },
+        outputSchema: researcherOutputSchema,
+        request: { input: "Search only after approval." },
+      }),
+    ).rejects.toBeInstanceOf(AgentApprovalNotSupportedError);
   });
 });

@@ -18,7 +18,11 @@ import type {
   StructuredAgentRun,
   ToolCallRecord,
 } from "../core/agent-runtime.js";
-import { AgentExecutionError, StructuredOutputValidationError } from "../core/errors.js";
+import {
+  AgentApprovalNotSupportedError,
+  AgentExecutionError,
+  StructuredOutputValidationError,
+} from "../core/errors.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
 import type { ToolRegistry } from "../tools/registry.js";
 
@@ -68,6 +72,10 @@ export class ToolCallingRuntime implements AgentRuntime {
   async runStructured<TOutput extends Record<string, unknown>>(
     run: StructuredAgentRun<TOutput>,
   ): Promise<AgentRunResult<TOutput>> {
+    if (run.definition.approvalRequiredTools.length > 0) {
+      throw new AgentApprovalNotSupportedError("langchain-agent");
+    }
+
     const runId = this.#createRunId();
     const startedAt = this.#now().toISOString();
     const model = this.#providers.getModel(run.definition.model);
@@ -131,6 +139,7 @@ export class ToolCallingRuntime implements AgentRuntime {
     const modelCallCount = Math.max(1, aiMessages.length - 1);
 
     return {
+      status: "completed",
       agentName: run.definition.name,
       runId,
       sessionId: run.request.sessionId,
@@ -138,6 +147,7 @@ export class ToolCallingRuntime implements AgentRuntime {
       output: validation.data,
       stepCount: modelCallCount,
       toolCalls,
+      approvalDecisions: [],
       startedAt,
       completedAt: this.#now().toISOString(),
     };

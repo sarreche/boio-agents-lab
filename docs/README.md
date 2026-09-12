@@ -9,13 +9,13 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 | `03-agent-state.md`               | Implementado               | Runtime explícito       |
 | `04-tools.md`                     | Implementado               | Tools y autorización    |
 | `05-model-providers.md`           | Registry/provider estático | Providers               |
-| `06-persistence.md`               | Esqueleto de diseño        | Checkpoints y sesiones  |
+| `06-persistence.md`               | Implementado con memoria   | Checkpoints y sesiones  |
 | `07-memory.md`                    | Esqueleto de diseño        | Memoria                 |
 | `08-subagents.md`                 | Esqueleto de diseño        | Delegación              |
 | `09-deep-agents.md`               | Fundamento documentado     | Runtime comparativo     |
 | `10-observability.md`             | Esqueleto de diseño        | Trazas y Langfuse       |
 | `11-evaluations.md`               | Esqueleto de diseño        | Evals                   |
-| `12-human-in-the-loop.md`         | Esqueleto de diseño        | Interrupt/resume        |
+| `12-human-in-the-loop.md`         | Implementado               | Interrupt/resume        |
 | `13-production-considerations.md` | Fundamento documentado     | Transversal             |
 
 Las decisiones durables están en `adr/`. La hoja de ruta ordena slices verticales que deben dejar el repositorio ejecutable en cada etapa.

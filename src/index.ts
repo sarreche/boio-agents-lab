@@ -21,17 +21,29 @@ export {
 export type { ResearcherOutput } from "./agents/researcher.js";
 export { createStructuredAgent } from "./core/agent-runtime.js";
 export type {
+  AgentInterruptedResult,
+  AgentInterruptRecord,
+  AgentResumeRequest,
+  AgentRunOutcome,
   AgentRunRequest,
   AgentRunResult,
   AgentRuntime,
+  ApprovalDecisionRecord,
   StructuredAgent,
+  StructuredAgentResume,
   StructuredAgentRun,
   StructuredOutputSchema,
   ToolCallRecord,
 } from "./core/agent-runtime.js";
 export {
+  AgentApprovalNotSupportedError,
   AgentExecutionError,
   AgentProtocolError,
+  AgentResumeNotSupportedError,
+  AgentSessionAlreadyExistsError,
+  AgentSessionMismatchError,
+  AgentSessionNotFoundError,
+  AgentSessionNotInterruptedError,
   AgentStepLimitError,
   GraphConfigurationError,
   MiniAgentsError,
@@ -41,6 +53,7 @@ export {
   InvalidToolDefinitionError,
   InvalidToolOutputError,
   SandboxViolationError,
+  SessionIdRequiredError,
   StructuredOutputValidationError,
   ToolAlreadyRegisteredError,
   ToolExecutionError,
@@ -69,10 +82,20 @@ export type { ExecuteToolRequest, ToolRegistryOptions } from "./tools/registry.j
 export { defineTool } from "./tools/tool.js";
 export type { RegisteredTool, ToolDefinition, ToolExecutionContext } from "./tools/tool.js";
 export { createAgentGraph, getStructuredOutputToolName } from "./graph/create-agent-graph.js";
-export { routeAfterModel, routeAfterTools } from "./graph/routers.js";
-export { AGENT_GRAPH_STATE_VERSION, AgentGraphState, serializeAgentError } from "./graph/state.js";
+export { routeAfterApproval, routeAfterModel, routeAfterTools } from "./graph/routers.js";
+export {
+  AGENT_GRAPH_STATE_VERSION,
+  AgentGraphState,
+  humanApprovalDecisionSchema,
+  recordedApprovalDecisionSchema,
+  serializeAgentError,
+  toolApprovalInterruptSchema,
+} from "./graph/state.js";
 export type {
   AgentGraphStateUpdate,
   AgentGraphStateValue,
+  HumanApprovalDecision,
+  RecordedApprovalDecision,
   SerializedAgentError,
+  ToolApprovalInterrupt,
 } from "./graph/state.js";

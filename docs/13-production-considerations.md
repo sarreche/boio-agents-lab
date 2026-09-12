@@ -25,13 +25,13 @@ Que el laboratorio use prácticas de producción no significa convertirlo en una
 
 Las métricas mínimas serán latencia, tokens, modelo/provider, tools, errores, evaluaciones y relaciones padre-hijo. El sistema debe funcionar con `NoopTracer`; una caída de Langfuse no debe derribar una ejecución salvo que una política explícita lo exija.
 
-Un futuro almacenamiento durable necesitará migraciones, conexiones acotadas, timeouts y estrategia de retención. Los checkpoints persistidos vuelven cada cambio de estado un problema de compatibilidad: nodos, channels y rutas viejas no deben borrarse sin una migración o ventana de drenaje.
+`MemorySaver` sirve para desarrollo y tests: se pierde al reiniciar, no coordina varias instancias y no implementa retención. Un futuro almacenamiento durable necesitará migraciones, conexiones acotadas, timeouts y estrategia de retención. Los checkpoints persistidos vuelven cada cambio de estado un problema de compatibilidad: nodos, channels y rutas viejas no deben borrarse sin una migración o ventana de drenaje.
 
 ## Trade-offs
 
 La durabilidad incrementa complejidad: los nodos reanudables deben ser deterministas o idempotentes. Capturar payloads completos mejora debugging, pero eleva costo y riesgo de datos; la política predeterminada será metadata útil y contenido configurable/redactado.
 
-El runtime explícito ya aplica un retry acotado al nodo del modelo y serializa errores de tools/protocolo. La clasificación fina de errores transitorios del provider y un timeout global del run siguen pendientes; reintentar indiscriminadamente efectos no idempotentes sería incorrecto.
+El runtime explícito ya aplica un retry acotado al nodo del modelo, serializa errores y pausa antes de efectos protegidos. La identidad `actor` del ejemplo no está autenticada, y `MemorySaver` no es durable; ambas son fronteras explícitas, no garantías de producción. La clasificación fina de errores transitorios del provider y un timeout global del run siguen pendientes; reintentar indiscriminadamente efectos no idempotentes sería incorrecto.
 
 ## Dónde mirar
 

@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 4 — LangGraph explícito**. Ya están activos el estado versionado, nodos y routers visibles, límites de pasos, retries del modelo, errores serializados, tools sandboxed, Summarizer y Researcher. Checkpoints y persistencia continúan en la hoja de ruta.
+> Estado: **slice 5 — checkpoints + human-in-the-loop**. `LangGraphRuntime` ya soporta `MemorySaver`, sesiones, interrupción antes de efectos, aprobación/rechazo y resume. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -59,7 +59,9 @@ const result = await summarizer.run({
   sessionId: "example-session",
 });
 
-// result.output: { summary: string; keyPoints: string[] }
+if (result.status === "completed") {
+  // result.output: { summary: string; keyPoints: string[] }
+}
 ```
 
 El Researcher demuestra la decisión model-driven de buscar o terminar:
@@ -72,6 +74,12 @@ La misma definición ejecutada por el grafo explícito:
 
 ```bash
 npm run example:langgraph
+```
+
+La pausa y reanudación de una tool protegida, también sin red:
+
+```bash
+npm run example:hitl
 ```
 
 ## Comandos
@@ -87,6 +95,7 @@ npm run example:langgraph
 | `npm run test:coverage`      | Ejecutar tests con umbral inicial de 80 %.                    |
 | `npm run eval`               | Ejecutar evaluadores funcionales.                             |
 | `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| `npm run example:hitl`       | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
 | `npm run example:langgraph`  | Ejecutar el StateGraph explícito sin red.                     |
 | `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
 | `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
@@ -122,9 +131,13 @@ flowchart TD
     START --> CallModel[call-model]
     CallModel --> Route{route-after-model}
     Route -->|tool calls| ExecuteTools[execute-tools]
+    Route -->|guarded tools| Approval[request-approval]
+    Approval -->|approve| ExecuteTools
+    Approval -->|reject| RejectTools[reject-tools]
     Route -->|structured output| Finalize[finalize]
     Route -->|invalid protocol| Protocol[record-protocol-error]
     ExecuteTools --> Budget{step budget}
+    RejectTools --> Budget
     Budget -->|available| CallModel
     Budget -->|exhausted| Limit[record-step-limit]
     Finalize --> END
@@ -132,7 +145,9 @@ flowchart TD
     Limit --> END
 ```
 
-Los routers son puros; los efectos ocurren en nodos nombrados. `runId` identifica una ejecución concreta y `sessionId` queda en el estado para el checkpointer que se añadirá en el punto 5.
+Los routers son puros; los efectos ocurren en nodos nombrados. `runId` identifica una ejecución concreta. `sessionId` se mapea a `thread_id`, conserva el checkpoint en `MemorySaver` y permite reanudar el mismo run con una decisión humana validada.
+
+Las tools declaradas en `approvalRequiredTools` se detienen antes del efecto. El resultado de `run()` y `resume()` usa `status: "completed" | "interrupted"`; el caller puede presentar el payload de aprobación y luego continuar con la misma sesión. `MemorySaver` es intencionalmente local y efímero: no sobrevive reinicios ni sustituye un backend de producción.
 
 ### Slice ejecutable actual
 
@@ -142,7 +157,7 @@ flowchart LR
     Runtime --> Registry[ModelProviderRegistry]
     Registry --> Model[BaseChatModel / fake]
     Model --> Validate[Zod output validation]
-    Validate --> Result[AgentRunResult]
+    Validate --> Result[AgentRunOutcome]
 ```
 
 `DirectModelRuntime` hace exactamente una llamada y establece el contrato común. No contiene un loop manual ni se describe como LangGraph. Su función es permitir estudiar y probar el límite modelo/structured-output antes de introducir estado y edges.

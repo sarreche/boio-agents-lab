@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 import type { AgentRunResult, AgentRuntime, StructuredAgentRun } from "../core/agent-runtime.js";
-import { AgentExecutionError, StructuredOutputValidationError } from "../core/errors.js";
+import {
+  AgentApprovalNotSupportedError,
+  AgentExecutionError,
+  StructuredOutputValidationError,
+} from "../core/errors.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
 
 export interface DirectModelRuntimeDependencies {
@@ -32,6 +36,10 @@ export class DirectModelRuntime implements AgentRuntime {
   async runStructured<TOutput extends Record<string, unknown>>(
     run: StructuredAgentRun<TOutput>,
   ): Promise<AgentRunResult<TOutput>> {
+    if (run.definition.approvalRequiredTools.length > 0) {
+      throw new AgentApprovalNotSupportedError("direct-model");
+    }
+
     const runId = this.#createRunId();
     const startedAt = this.#now().toISOString();
     const model = this.#providers.getModel(run.definition.model);
@@ -71,6 +79,7 @@ export class DirectModelRuntime implements AgentRuntime {
     }
 
     return {
+      status: "completed",
       agentName: run.definition.name,
       runId,
       sessionId: run.request.sessionId,
@@ -78,6 +87,7 @@ export class DirectModelRuntime implements AgentRuntime {
       output: validation.data,
       stepCount: 1,
       toolCalls: [],
+      approvalDecisions: [],
       startedAt,
       completedAt: this.#now().toISOString(),
     };

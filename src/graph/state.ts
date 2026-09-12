@@ -1,7 +1,7 @@
 import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
 import { z } from "zod";
 
-export const AGENT_GRAPH_STATE_VERSION = 1 as const;
+export const AGENT_GRAPH_STATE_VERSION = 2 as const;
 
 export const serializedAgentErrorSchema = z.object({
   node: z.string().min(1),
@@ -20,8 +20,28 @@ export const graphToolCallSchema = z.object({
 export const graphToolResultSchema = z.object({
   name: z.string().min(1),
   callId: z.string().min(1),
-  status: z.enum(["success", "error"]),
+  status: z.enum(["success", "error", "rejected"]),
   content: z.string(),
+});
+
+export const humanApprovalDecisionSchema = z.object({
+  decision: z.enum(["approve", "reject"]),
+  actor: z.string().trim().min(1),
+  reason: z.string().trim().min(1).optional(),
+});
+
+export const recordedApprovalDecisionSchema = humanApprovalDecisionSchema.extend({
+  decidedAt: z.iso.datetime(),
+  toolCallIds: z.array(z.string().min(1)).min(1),
+});
+
+export const toolApprovalInterruptSchema = z.object({
+  kind: z.literal("tool-approval"),
+  agentName: z.string().min(1),
+  runId: z.string().min(1),
+  sessionId: z.string().min(1),
+  toolCalls: z.array(graphToolCallSchema).min(1),
+  validationErrors: z.array(z.string()).optional(),
 });
 
 function appendItems<T>(current: readonly T[], update: readonly T[]): T[] {
@@ -38,6 +58,7 @@ export const AgentGraphState = new StateSchema({
   schemaVersion: z.literal(AGENT_GRAPH_STATE_VERSION),
   agentName: z.string().min(1),
   runId: z.string().min(1),
+  startedAt: z.iso.datetime(),
   sessionId: z.string().min(1).optional(),
   promptVersion: z.string().min(1),
   messages: MessagesValue,
@@ -66,6 +87,13 @@ export const AgentGraphState = new StateSchema({
       reducer: appendItems,
     },
   ),
+  approvalDecisions: new ReducedValue(
+    z.array(recordedApprovalDecisionSchema).default(() => []),
+    {
+      inputSchema: z.array(recordedApprovalDecisionSchema),
+      reducer: appendItems,
+    },
+  ),
   status: z.enum(["running", "completed", "failed"]),
   failureReason: z.string().optional(),
   finalOutput: z.unknown().optional(),
@@ -74,6 +102,9 @@ export const AgentGraphState = new StateSchema({
 export type AgentGraphStateValue = typeof AgentGraphState.State;
 export type AgentGraphStateUpdate = typeof AgentGraphState.Update;
 export type SerializedAgentError = z.output<typeof serializedAgentErrorSchema>;
+export type HumanApprovalDecision = z.output<typeof humanApprovalDecisionSchema>;
+export type RecordedApprovalDecision = z.output<typeof recordedApprovalDecisionSchema>;
+export type ToolApprovalInterrupt = z.output<typeof toolApprovalInterruptSchema>;
 
 export function serializeAgentError(options: {
   node: string;
