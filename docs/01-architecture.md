@@ -6,8 +6,10 @@ Un framework de agentes suele volverse difícil de estudiar por dos motivos opue
 
 ## Diseño
 
-`AgentDefinition` es dato serializable. Describe identidad, prompt versionado, modelo, tools permitidas y límites. `AgentRuntime` será el puerto que ejecute esa definición. Los dos adapters planeados son deliberadamente diferentes internamente:
+`AgentDefinition` es dato serializable. Describe identidad, prompt versionado, modelo, tools permitidas y límites. `AgentRuntime` es el puerto que ejecuta esa definición. Los adapters son deliberadamente diferentes internamente:
 
+- Direct Model realiza una llamada estructurada sin tool loop.
+- Tool Calling delega el loop de referencia a `createAgent` de LangChain.
 - LangGraph construye un `StateGraph` visible, con estado y routing propios.
 - Deep Agents configura el harness y documenta las capacidades delegadas.
 
@@ -16,11 +18,16 @@ flowchart LR
     Agents[Agent definitions] --> Core[Core contracts]
     API[HTTP / examples] --> Core
     Core --> RuntimePort[AgentRuntime]
+    RuntimePort --> DirectAdapter
+    RuntimePort --> ToolCallingAdapter
     RuntimePort --> LangGraphAdapter
     RuntimePort --> DeepAgentsAdapter
+    DirectAdapter --> Providers[Model registry]
+    ToolCallingAdapter --> Providers
+    ToolCallingAdapter --> Tools[Authorized tool registry]
     LangGraphAdapter --> Providers[Model registry]
     DeepAgentsAdapter --> Providers
-    LangGraphAdapter --> Tools[Authorized tool registry]
+    LangGraphAdapter --> Tools
     DeepAgentsAdapter --> Tools
     LangGraphAdapter --> Persistence
     LangGraphAdapter --> Tracing[Tracer port]
@@ -44,7 +51,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/runtime/direct-model-runtime.ts`, `src/agents/summarizer.ts`, `src/config/environment.ts`, `AGENTS.md` y las ADR. El runtime directo fija el contrato y la validación estructurada; `src/graph/state.ts` y `src/graph/create-agent-graph.ts` llegarán en el slice de LangGraph.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/runtime/direct-model-runtime.ts`, `src/runtime/tool-calling-runtime.ts`, `src/agents/summarizer.ts`, `src/agents/researcher.ts`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los dos runtimes fijan el contrato y ofrecen referencias ejecutables; `src/graph/state.ts` y `src/graph/create-agent-graph.ts` llegarán en el slice de LangGraph explícito.
 
 ## Ejercicios
 

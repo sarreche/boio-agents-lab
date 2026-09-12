@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 2 — Summarizer vertical**. La configuración, contratos iniciales, provider registry, runtime directo, Summarizer estructurado, tests y documentación están activos. LangGraph, tools y persistencia continúan en la hoja de ruta y todavía no se presentan como funcionales.
+> Estado: **slice 3 — Tools + Researcher**. Ya están activos los contratos, providers, runtime directo, runtime de tool calling, Summarizer, Researcher y cinco tools sandboxed. El StateGraph explícito y la persistencia continúan en la hoja de ruta.
 
 ## Objetivo
 
@@ -63,6 +63,12 @@ const result = await summarizer.run({
 // result.output: { summary: string; keyPoints: string[] }
 ```
 
+El Researcher demuestra la decisión model-driven de buscar o terminar:
+
+```bash
+npm run example:researcher
+```
+
 ## Comandos
 
 | Comando                      | Propósito                                                     |
@@ -76,6 +82,7 @@ const result = await summarizer.run({
 | `npm run test:coverage`      | Ejecutar tests con umbral inicial de 80 %.                    |
 | `npm run eval`               | Ejecutar evaluadores funcionales.                             |
 | `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
 | `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
 
 PostgreSQL local:
@@ -140,6 +147,30 @@ flowchart LR
 ```
 
 `DirectModelRuntime` hace exactamente una llamada y establece el contrato común. No contiene un loop manual ni se describe como LangGraph. Su función es permitir estudiar y probar el límite modelo/structured-output antes de introducir estado y edges.
+
+`ToolCallingRuntime` usa `createAgent` de LangChain, que se ejecuta sobre LangGraph. Esto evita mantener un loop manual transitorio. El siguiente slice implementará el grafo equivalente con nodos, estado y edges visibles.
+
+## Tools y autorización
+
+```mermaid
+flowchart LR
+    Definition[AgentDefinition.tools] --> Registry[ToolRegistry]
+    Registry --> Authorize{Authorized?}
+    Authorize -->|no| Deny[ToolNotAuthorizedError]
+    Authorize -->|yes| Input[Validate input]
+    Input --> Execute[Execute with timeout]
+    Execute --> Output[Validate output]
+    Output --> Adapter[LangChain tool adapter]
+```
+
+Las tools usan `lower_snake_case`, se registran explícitamente y nunca se entregan todas a un agente. Los built-ins disponibles son:
+
+- `mock_search`: corpus local determinista.
+- `calculator`: operaciones aritméticas sin `eval`.
+- `current_time`: reloj y timezone explícitos, con clock inyectable.
+- `read_file` y `write_file`: UTF-8 confinado a un sandbox root, con límites de tamaño y overwrite opt-in.
+
+Consulta [Tools](docs/04-tools.md) para los límites de seguridad y ejercicios.
 
 ## Configuración y secretos
 

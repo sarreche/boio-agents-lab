@@ -27,3 +27,59 @@ export class StructuredOutputValidationError extends AgentExecutionError {
     this.issues = issues;
   }
 }
+
+export class ToolNotRegisteredError extends MiniAgentsError {
+  constructor(toolName: string) {
+    super(`Tool "${toolName}" is not registered.`);
+  }
+}
+
+export class ToolAlreadyRegisteredError extends MiniAgentsError {
+  constructor(toolName: string) {
+    super(`Tool "${toolName}" is already registered.`);
+  }
+}
+
+export class InvalidToolDefinitionError extends MiniAgentsError {
+  constructor(message: string) {
+    super(`Invalid tool definition: ${message}`);
+  }
+}
+
+export class ToolNotAuthorizedError extends MiniAgentsError {
+  constructor(toolName: string) {
+    super(`Tool "${toolName}" is not authorized for this agent.`);
+  }
+}
+
+export class InvalidToolArgumentsError extends MiniAgentsError {
+  readonly issues: readonly string[];
+
+  constructor(toolName: string, issues: readonly string[], options?: ErrorOptions) {
+    super(`Tool "${toolName}" received invalid arguments.`, options);
+    this.issues = issues;
+  }
+}
+
+export class InvalidToolOutputError extends MiniAgentsError {
+  readonly issues: readonly string[];
+
+  constructor(toolName: string, issues: readonly string[], options?: ErrorOptions) {
+    super(`Tool "${toolName}" returned invalid output.`, options);
+    this.issues = issues;
+  }
+}
+
+export class ToolExecutionError extends MiniAgentsError {
+  constructor(toolName: string, options?: ErrorOptions) {
+    super(`Tool "${toolName}" execution failed.`, options);
+  }
+}
+
+export class ToolTimeoutError extends ToolExecutionError {
+  constructor(toolName: string, timeoutMs: number) {
+    super(toolName, { cause: new Error(`Timed out after ${String(timeoutMs)} ms.`) });
+  }
+}
+
+export class SandboxViolationError extends MiniAgentsError {}

@@ -13,6 +13,10 @@ export const modelConfigSchema = z.object({
 
 export type ModelConfig = z.infer<typeof modelConfigSchema>;
 
+const uniqueNameListSchema = z
+  .array(z.string().min(1))
+  .refine((names) => new Set(names).size === names.length, "Names must be unique.");
+
 /**
  * Serializable configuration shared by both runtimes.
  *
@@ -25,8 +29,8 @@ export const agentDefinitionSchema = z.object({
   systemPrompt: z.string().min(1),
   promptVersion: z.string().min(1).default("1.0.0"),
   model: modelConfigSchema,
-  tools: z.array(z.string().min(1)).default([]),
-  subagents: z.array(z.string().min(1)).default([]),
+  tools: uniqueNameListSchema.default([]),
+  subagents: uniqueNameListSchema.default([]),
   maxSteps: z.number().int().positive().default(10),
   maxSubagentDepth: z.number().int().nonnegative().default(3),
   metadata: z.record(z.string(), z.unknown()).default({}),

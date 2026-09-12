@@ -32,4 +32,16 @@ describe("defineAgent", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects duplicate tool permissions", () => {
+    expect(() =>
+      defineAgent({
+        name: "duplicate-tools",
+        description: "Invalid allowlist",
+        systemPrompt: "No-op",
+        model: { provider: "openai", model: "test-model" },
+        tools: ["mock_search", "mock_search"],
+      }),
+    ).toThrow();
+  });
 });

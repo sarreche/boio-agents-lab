@@ -8,6 +8,12 @@ export interface AgentRunRequest {
   metadata?: Readonly<Record<string, unknown>>;
 }
 
+export interface ToolCallRecord {
+  name: string;
+  callId: string;
+  arguments: Readonly<Record<string, unknown>>;
+}
+
 export interface AgentRunResult<TOutput extends Record<string, unknown>> {
   agentName: string;
   runId: string;
@@ -15,14 +21,18 @@ export interface AgentRunResult<TOutput extends Record<string, unknown>> {
   runtime: string;
   output: TOutput;
   stepCount: number;
+  toolCalls: readonly ToolCallRecord[];
   startedAt: string;
   completedAt: string;
 }
 
+export type StructuredOutputSchema<TOutput extends Record<string, unknown>> = z.ZodObject &
+  z.ZodType<TOutput>;
+
 export interface StructuredAgentRun<TOutput extends Record<string, unknown>> {
   definition: AgentDefinition;
   request: AgentRunRequest;
-  outputSchema: z.ZodType<TOutput>;
+  outputSchema: StructuredOutputSchema<TOutput>;
 }
 
 /** Common execution port implemented by the direct, LangGraph, and Deep Agents runtimes. */
@@ -39,7 +49,7 @@ export interface StructuredAgent<TOutput extends Record<string, unknown>> {
 
 export function createStructuredAgent<TOutput extends Record<string, unknown>>(options: {
   definition: AgentDefinition;
-  outputSchema: z.ZodType<TOutput>;
+  outputSchema: StructuredOutputSchema<TOutput>;
   runtime: AgentRuntime;
 }): StructuredAgent<TOutput> {
   return {
