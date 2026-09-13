@@ -57,7 +57,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los tres archivos de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/observability/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL, delegación y trazas ya son explícitos en `LangGraphRuntime`.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los cuatro adapters de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/observability/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL, delegación y trazas son explícitos en `LangGraphRuntime`, mientras `DeepAgentsRuntime` permite estudiar un harness de mayor nivel detrás de la misma allowlist.
 
 ## Ejercicios
 

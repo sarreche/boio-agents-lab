@@ -12,7 +12,7 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 | `06-persistence.md`               | Implementado con memoria   | Checkpoints y sesiones  |
 | `07-memory.md`                    | Esqueleto de diseño        | Memoria                 |
 | `08-subagents.md`                 | Implementado               | Delegación              |
-| `09-deep-agents.md`               | Fundamento documentado     | Runtime comparativo     |
+| `09-deep-agents.md`               | Implementado               | Runtime comparativo     |
 | `10-observability.md`             | Implementado               | Trazas y Langfuse       |
 | `11-evaluations.md`               | Implementado               | Evals                   |
 | `12-human-in-the-loop.md`         | Implementado               | Interrupt/resume        |

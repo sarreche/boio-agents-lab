@@ -131,6 +131,13 @@ export type {
 } from "./observability/tracer.js";
 export { DirectModelRuntime } from "./runtime/direct-model-runtime.js";
 export type { DirectModelRuntimeDependencies } from "./runtime/direct-model-runtime.js";
+export { DeepAgentsRuntime } from "./runtime/deep-agents-runtime.js";
+export type {
+  DeepAgentFactory,
+  DeepAgentFactoryOptions,
+  DeepAgentsRuntimeDependencies,
+  HarnessProfileRegistrar,
+} from "./runtime/deep-agents-runtime.js";
 export { LangGraphRuntime } from "./runtime/langgraph-runtime.js";
 export type { LangGraphRuntimeDependencies } from "./runtime/langgraph-runtime.js";
 export { ToolCallingRuntime } from "./runtime/tool-calling-runtime.js";

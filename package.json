@@ -15,6 +15,7 @@
     "eval": "vitest run tests/evals --passWithNoTests",
     "eval:regression": "vitest run tests/regression --passWithNoTests",
     "example:evaluation": "tsx examples/evaluation.ts",
+    "example:deep-agents": "tsx examples/deep-agent.ts",
     "example:hitl": "tsx examples/human-in-the-loop.ts",
     "example:langgraph": "tsx examples/explicit-langgraph.ts",
     "example:researcher": "tsx examples/researcher.ts",
