@@ -55,7 +55,8 @@ El composition root es responsable de registrar agentes, construir runtimes/prov
 - El body tiene un límite predeterminado de 64 KiB, configurable al crear la API.
 - Los fallos inesperados se registran en servidor, pero la respuesta no filtra causas internas.
 - `InMemoryApiRunStore` es efímero, local al proceso y no resuelve concurrencia distribuida. Tampoco es el checkpointer: perder el índice de consulta no equivale a perder el estado durable de un runtime futuro.
-- La API todavía no autentica al actor de una aprobación. No debe exponerse públicamente sin un gateway de autenticación/autorización; el endurecimiento corresponde al punto 11.
+- La API no autentica al actor de una aprobación porque MiniAgents no define usuarios ni tenants. No debe exponerse públicamente sin un gateway de autenticación/autorización perteneciente a la aplicación host.
+- Un deadline vencido se traduce a `504 RUN_TIMEOUT`; causas internas inesperadas no se incluyen en la respuesta.
 
 ## Ubicación y lectura
 

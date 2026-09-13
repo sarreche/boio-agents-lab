@@ -33,6 +33,7 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
   model: BaseChatModel;
   tools: ToolRegistry;
   modelRetryMaxAttempts: number;
+  modelTimeoutMs?: number;
   checkpointer?: BaseCheckpointSaver;
   now?: () => Date;
   subagents?: SubagentCoordinator;
@@ -87,6 +88,7 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
         tracer: options.tracer,
         modelName: options.definition.model.model,
         modelParameters: { temperature: options.definition.model.temperature },
+        modelTimeoutMs: options.modelTimeoutMs,
       }),
       {
         retryPolicy: {

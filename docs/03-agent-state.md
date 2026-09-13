@@ -42,6 +42,7 @@ Los nodos reciben el snapshot actual y retornan solamente un `AgentGraphStateUpd
 
 - La versión `2` agrega `startedAt`, auditoría de aprobación y el resultado `rejected`. La ADR 0007 registra el cambio antes de usar almacenamiento durable.
 - La versión `3` agrega lineage de delegación y `childRuns`. La ADR 0008 conserva el cambio de contrato.
+- `migratePersistedAgentState()` actualiza snapshots v1/v2 a v3 y rechaza versiones futuras o estados inválidos. La ADR 0013 documenta el boundary.
 - `toolResults.content` es texto JSON, no un objeto arbitrario, para mantener el audit trail serializable.
 - Los errores de tools quedan en state y también se convierten en `ToolMessage`; esto permite recuperación y conserva evidencia.
 - Los mensajes son instancias LangChain administradas por `MessagesValue`; el serializer/checkpointer de LangGraph será responsable de su representación durable.
@@ -49,7 +50,7 @@ Los nodos reciben el snapshot actual y retornan solamente un `AgentGraphStateUpd
 
 ## Dónde leer
 
-Leer `src/graph/state.ts`, luego `src/graph/nodes/`, `src/graph/routers.ts` y `tests/graph/routers.test.ts`.
+Leer `src/graph/state.ts`, luego `src/persistence/agent-state-migrations.ts`, `src/graph/nodes/`, `src/graph/routers.ts` y sus tests.
 
 ## Ejercicios
 

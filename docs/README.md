@@ -2,7 +2,7 @@
 
 La documentación sigue el orden conceptual en que conviene aprender el sistema. El estado de cada capítulo evita confundir diseño con funcionalidad disponible.
 
-| Capítulo                          | Estado inicial             | Slice de implementación |
+| Capítulo                          | Estado actual              | Slice de implementación |
 | --------------------------------- | -------------------------- | ----------------------- |
 | `01-architecture.md`              | Fundamento documentado     | Todos                   |
 | `02-langgraph-runtime.md`         | Implementado               | Runtime explícito       |
@@ -16,7 +16,7 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 | `10-observability.md`             | Implementado               | Trazas y Langfuse       |
 | `11-evaluations.md`               | Implementado               | Evals                   |
 | `12-human-in-the-loop.md`         | Implementado               | Interrupt/resume        |
-| `13-production-considerations.md` | Fundamento documentado     | Transversal             |
+| `13-production-considerations.md` | Implementado               | Endurecimiento          |
 | `14-http-api.md`                  | Implementado               | API HTTP                |
 
 Las decisiones durables están en `adr/`. La hoja de ruta ordena slices verticales que deben dejar el repositorio ejecutable en cada etapa.

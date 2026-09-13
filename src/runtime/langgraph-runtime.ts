@@ -16,8 +16,11 @@ import type {
   StructuredAgentResume,
   StructuredAgentRun,
 } from "../core/agent-runtime.js";
+import { executeWithDeadline } from "../core/execution-deadline.js";
 import {
   AgentExecutionError,
+  AgentModelTimeoutError,
+  AgentRunTimeoutError,
   AgentSessionAlreadyExistsError,
   AgentSessionMismatchError,
   AgentSessionNotFoundError,
@@ -42,6 +45,8 @@ export interface LangGraphRuntimeDependencies {
   now?: () => Date;
   subagents?: SubagentCoordinator;
   tracer?: Tracer;
+  modelTimeoutMs?: number;
+  runTimeoutMs?: number;
 }
 
 type GraphRun<TOutput extends Record<string, unknown>> =
@@ -57,6 +62,8 @@ export class LangGraphRuntime implements AgentRuntime {
   readonly #now: () => Date;
   readonly #subagents?: SubagentCoordinator;
   readonly #tracer: Tracer;
+  readonly #modelTimeoutMs: number;
+  readonly #runTimeoutMs: number;
 
   constructor(dependencies: LangGraphRuntimeDependencies) {
     const modelRetryMaxAttempts = dependencies.modelRetryMaxAttempts ?? 3;
@@ -72,6 +79,8 @@ export class LangGraphRuntime implements AgentRuntime {
     this.#now = dependencies.now ?? (() => new Date());
     this.#subagents = dependencies.subagents;
     this.#tracer = dependencies.tracer ?? new NoopTracer();
+    this.#modelTimeoutMs = dependencies.modelTimeoutMs ?? 60_000;
+    this.#runTimeoutMs = dependencies.runTimeoutMs ?? 300_000;
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -109,29 +118,37 @@ export class LangGraphRuntime implements AgentRuntime {
     return this.#tracer.observe(this.#agentObservation(run, runId), async (observation) => {
       let state;
       try {
-        state = await graph.invoke(
-          {
-            schemaVersion: AGENT_GRAPH_STATE_VERSION,
-            agentName: run.definition.name,
-            runId,
-            startedAt,
-            sessionId: run.request.sessionId,
-            parentRunId: lineage?.parentRunId,
-            delegationDepth: lineage?.depth ?? 0,
-            delegationMaxDepth: lineage?.maxDepth ?? run.definition.maxSubagentDepth,
-            promptVersion: run.definition.promptVersion,
-            messages: [new HumanMessage(run.request.input)],
-            stepCount: 0,
-            toolCalls: [],
-            toolResults: [],
-            errors: [],
-            approvalDecisions: [],
-            childRuns: [],
-            status: "running",
-          },
-          config,
-        );
+        state = await executeWithDeadline({
+          timeoutMs: this.#runTimeoutMs,
+          timeoutError: () => new AgentRunTimeoutError(run.definition.name, this.#runTimeoutMs),
+          operation: async (signal) =>
+            await graph.invoke(
+              {
+                schemaVersion: AGENT_GRAPH_STATE_VERSION,
+                agentName: run.definition.name,
+                runId,
+                startedAt,
+                sessionId: run.request.sessionId,
+                parentRunId: lineage?.parentRunId,
+                delegationDepth: lineage?.depth ?? 0,
+                delegationMaxDepth: lineage?.maxDepth ?? run.definition.maxSubagentDepth,
+                promptVersion: run.definition.promptVersion,
+                messages: [new HumanMessage(run.request.input)],
+                stepCount: 0,
+                toolCalls: [],
+                toolResults: [],
+                errors: [],
+                approvalDecisions: [],
+                childRuns: [],
+                status: "running",
+              },
+              { ...config, signal },
+            ),
+        });
       } catch (cause) {
+        if (cause instanceof AgentRunTimeoutError || cause instanceof AgentModelTimeoutError) {
+          throw cause;
+        }
         throw new AgentExecutionError(`Agent "${run.definition.name}" graph execution failed.`, {
           cause,
         });
@@ -176,16 +193,26 @@ export class LangGraphRuntime implements AgentRuntime {
       async (observation) => {
         let state;
         try {
-          state = await graph.invoke(new Command({ resume: resume.request.value }), {
-            ...config,
-            metadata: {
-              ...config.metadata,
-              ...resume.request.metadata,
-              runId: savedState.runId,
-              resumed: true,
-            },
+          state = await executeWithDeadline({
+            timeoutMs: this.#runTimeoutMs,
+            timeoutError: () =>
+              new AgentRunTimeoutError(resume.definition.name, this.#runTimeoutMs),
+            operation: async (signal) =>
+              await graph.invoke(new Command({ resume: resume.request.value }), {
+                ...config,
+                signal,
+                metadata: {
+                  ...config.metadata,
+                  ...resume.request.metadata,
+                  runId: savedState.runId,
+                  resumed: true,
+                },
+              }),
           });
         } catch (cause) {
+          if (cause instanceof AgentRunTimeoutError || cause instanceof AgentModelTimeoutError) {
+            throw cause;
+          }
           throw new AgentExecutionError(`Agent "${resume.definition.name}" resume failed.`, {
             cause,
           });
@@ -207,6 +234,7 @@ export class LangGraphRuntime implements AgentRuntime {
       model: this.#providers.getModel(run.definition.model),
       tools: this.#tools,
       modelRetryMaxAttempts: this.#modelRetryMaxAttempts,
+      modelTimeoutMs: this.#modelTimeoutMs,
       checkpointer: this.#checkpointer,
       now: this.#now,
       subagents: this.#subagents,

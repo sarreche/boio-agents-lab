@@ -9,7 +9,17 @@ import type {
   AgentRunResult,
   StructuredAgent,
 } from "../../src/core/agent-runtime.js";
-import { AgentSessionAlreadyExistsError } from "../../src/core/errors.js";
+import {
+  AgentExecutionError,
+  AgentResumeNotSupportedError,
+  AgentRunTimeoutError,
+  AgentSessionAlreadyExistsError,
+  AgentSessionMismatchError,
+  AgentSessionNotFoundError,
+  AgentSessionNotInterruptedError,
+  SessionIdRequiredError,
+} from "../../src/core/errors.js";
+import { ApiAgentAlreadyRegisteredError } from "../../src/api/errors.js";
 import { defineAgent } from "../../src/core/agent-definition.js";
 
 interface TestOutput extends Record<string, unknown> {
@@ -200,6 +210,117 @@ describe("HTTP API", () => {
       },
     });
 
+    await app.close();
+  });
+
+  it("covers the remaining stable lifecycle error mappings", async () => {
+    const errors = [
+      {
+        error: new AgentSessionNotFoundError("missing"),
+        expectedStatus: 404,
+        expectedCode: "NOT_FOUND",
+      },
+      {
+        error: new AgentSessionMismatchError("session", "expected", "actual"),
+        expectedStatus: 409,
+        expectedCode: "SESSION_CONFLICT",
+      },
+      {
+        error: new AgentSessionNotInterruptedError("session"),
+        expectedStatus: 409,
+        expectedCode: "SESSION_CONFLICT",
+      },
+      {
+        error: new SessionIdRequiredError("run"),
+        expectedStatus: 422,
+        expectedCode: "UNPROCESSABLE_REQUEST",
+      },
+      {
+        error: new AgentResumeNotSupportedError("resume unavailable"),
+        expectedStatus: 422,
+        expectedCode: "UNPROCESSABLE_REQUEST",
+      },
+      {
+        error: new AgentRunTimeoutError("test-agent", 100),
+        expectedStatus: 504,
+        expectedCode: "RUN_TIMEOUT",
+      },
+    ] as const;
+
+    for (const scenario of errors) {
+      const agent: StructuredAgent<TestOutput> = {
+        ...createTestAgent(),
+        run: () => Promise.reject(scenario.error),
+      };
+      const app = createHttpApi({ agents: new HttpAgentRegistry().register(agent) });
+      const response = await app.inject({
+        method: "POST",
+        url: "/agents/test-agent/run",
+        payload: { input: "fail" },
+      });
+      expect(response.statusCode).toBe(scenario.expectedStatus);
+      expect(response.json()).toMatchObject({ error: { code: scenario.expectedCode } });
+      await app.close();
+    }
+  });
+
+  it("handles malformed JSON, oversized payloads, and unexpected failures safely", async () => {
+    const agents = new HttpAgentRegistry().register(createTestAgent());
+    const app = createHttpApi({ agents, bodyLimit: 20 });
+
+    const malformed = await app.inject({
+      method: "POST",
+      url: "/agents/test-agent/run",
+      headers: { "content-type": "application/json" },
+      payload: "{broken",
+    });
+    expect(malformed.statusCode).toBe(400);
+    expect(malformed.json()).toMatchObject({ error: { code: "INVALID_REQUEST" } });
+
+    const oversized = await app.inject({
+      method: "POST",
+      url: "/agents/test-agent/run",
+      payload: { input: "this request is deliberately larger than twenty bytes" },
+    });
+    expect(oversized.statusCode).toBe(413);
+    expect(oversized.json()).toEqual({
+      error: {
+        code: "PAYLOAD_TOO_LARGE",
+        message: "Request body exceeds the configured limit.",
+      },
+    });
+    await app.close();
+
+    for (const failure of [new AgentExecutionError("provider details"), new Error("bug")]) {
+      const failingAgent: StructuredAgent<TestOutput> = {
+        ...createTestAgent(),
+        run: () => Promise.reject(failure),
+      };
+      const failingApp = createHttpApi({
+        agents: new HttpAgentRegistry().register(failingAgent),
+      });
+      const response = await failingApp.inject({
+        method: "POST",
+        url: "/agents/test-agent/run",
+        payload: { input: "fail" },
+      });
+      expect(response.statusCode).toBe(500);
+      expect(response.json()).toMatchObject({ error: { code: "INTERNAL_ERROR" } });
+      expect(response.body).not.toContain("provider details");
+      expect(response.body).not.toContain("bug");
+      await failingApp.close();
+    }
+  });
+
+  it("rejects duplicate registrations and missing sessions", async () => {
+    const agent = createTestAgent();
+    expect(() => new HttpAgentRegistry([agent]).register(agent)).toThrow(
+      ApiAgentAlreadyRegisteredError,
+    );
+
+    const app = createHttpApi({ agents: new HttpAgentRegistry().register(agent) });
+    const response = await app.inject({ method: "GET", url: "/sessions/missing" });
+    expect(response.statusCode).toBe(404);
     await app.close();
   });
 });

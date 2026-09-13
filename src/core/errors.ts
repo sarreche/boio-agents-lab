@@ -19,6 +19,24 @@ export class ModelProviderAlreadyRegisteredError extends MiniAgentsError {
 
 export class AgentExecutionError extends MiniAgentsError {}
 
+export class AgentRunTimeoutError extends AgentExecutionError {
+  readonly timeoutMs: number;
+
+  constructor(agentName: string, timeoutMs: number) {
+    super(`Agent "${agentName}" exceeded its ${String(timeoutMs)} ms run deadline.`);
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+export class AgentModelTimeoutError extends AgentExecutionError {
+  readonly timeoutMs: number;
+
+  constructor(agentName: string, timeoutMs: number) {
+    super(`Agent "${agentName}" model call exceeded ${String(timeoutMs)} ms.`);
+    this.timeoutMs = timeoutMs;
+  }
+}
+
 export class AgentProtocolError extends AgentExecutionError {}
 
 export class AgentStepLimitError extends AgentExecutionError {
@@ -28,6 +46,10 @@ export class AgentStepLimitError extends AgentExecutionError {
 }
 
 export class GraphConfigurationError extends MiniAgentsError {}
+
+export class ExecutionConfigurationError extends MiniAgentsError {}
+
+export class AgentStateMigrationError extends MiniAgentsError {}
 
 export class ObservabilityConfigurationError extends MiniAgentsError {}
 

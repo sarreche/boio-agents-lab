@@ -7,7 +7,11 @@ import { describe, expect, it } from "vitest";
 
 import { createResearcherDefinition, researcherOutputSchema } from "../../src/agents/researcher.js";
 import { createStructuredAgent } from "../../src/core/agent-runtime.js";
-import { AgentExecutionError, GraphConfigurationError } from "../../src/core/errors.js";
+import {
+  AgentExecutionError,
+  AgentModelTimeoutError,
+  GraphConfigurationError,
+} from "../../src/core/errors.js";
 import { createAgentGraph } from "../../src/graph/create-agent-graph.js";
 import { AGENT_GRAPH_STATE_VERSION } from "../../src/graph/state.js";
 import { ModelProviderRegistry } from "../../src/models/registry.js";
@@ -36,7 +40,12 @@ function createTools() {
   ]);
 }
 
-function createRuntime(model: FakeToolCallingModel, modelRetryMaxAttempts = 3, tracer?: Tracer) {
+function createRuntime(
+  model: FakeToolCallingModel,
+  modelRetryMaxAttempts = 3,
+  tracer?: Tracer,
+  timeouts?: { modelTimeoutMs: number; runTimeoutMs: number },
+) {
   return new LangGraphRuntime({
     providers: new ModelProviderRegistry([new StaticModelProvider("openrouter", model)]),
     tools: createTools(),
@@ -44,6 +53,7 @@ function createRuntime(model: FakeToolCallingModel, modelRetryMaxAttempts = 3, t
     createRunId: () => "graph-run",
     now: () => new Date("2026-09-11T15:00:00.000Z"),
     tracer,
+    ...timeouts,
   });
 }
 
@@ -68,6 +78,15 @@ class FailOnceModel extends FakeToolCallingModel {
         }
         return this.invoke(input, config);
       },
+    );
+    return new RunnableBinding({ bound, config: {} });
+  }
+}
+
+class HangingModel extends FakeToolCallingModel {
+  override bindTools(_tools: StructuredTool[]) {
+    const bound = RunnableLambda.from<BaseLanguageModelInput, BaseMessage>(
+      () => new Promise<BaseMessage>(() => undefined),
     );
     return new RunnableBinding({ bound, config: {} });
   }
@@ -143,6 +162,23 @@ describe("LangGraphRuntime", () => {
       AgentExecutionError,
     );
     expect(model.attempts).toBe(1);
+  });
+
+  it("enforces the per-model-call timeout", async () => {
+    const model = new HangingModel({ toolCalls: [] });
+    const runtime = createRuntime(model, 1, undefined, {
+      modelTimeoutMs: 5,
+      runTimeoutMs: 100,
+    });
+    const agent = createStructuredAgent({
+      definition: createResearcherDefinition(modelConfig),
+      outputSchema: researcherOutputSchema,
+      runtime,
+    });
+
+    await expect(agent.run({ input: "Never return." })).rejects.toBeInstanceOf(
+      AgentModelTimeoutError,
+    );
   });
 
   it("stops before exceeding the model-step budget", async () => {
