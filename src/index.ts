@@ -5,6 +5,19 @@ export type {
   ModelConfig,
   ModelProviderName,
 } from "./core/agent-definition.js";
+export { HttpAgentRegistry } from "./api/agent-registry.js";
+export type { HttpAgent } from "./api/agent-registry.js";
+export {
+  ApiAgentAlreadyRegisteredError,
+  ApiAgentNotFoundError,
+  ApiRequestValidationError,
+  ApiRunNotFoundError,
+  ApiSessionNotFoundError,
+} from "./api/errors.js";
+export { createHttpApi } from "./api/http-api.js";
+export type { CreateHttpApiOptions } from "./api/http-api.js";
+export { InMemoryApiRunStore } from "./api/run-store.js";
+export type { ApiRunRecord, ApiRunStore, ApiSessionRecord } from "./api/run-store.js";
 export { environmentSchema, parseEnvironment } from "./config/environment.js";
 export type { Environment } from "./config/environment.js";
 export {

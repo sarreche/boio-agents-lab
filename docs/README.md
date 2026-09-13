@@ -17,6 +17,7 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 | `11-evaluations.md`               | Implementado               | Evals                   |
 | `12-human-in-the-loop.md`         | Implementado               | Interrupt/resume        |
 | `13-production-considerations.md` | Fundamento documentado     | Transversal             |
+| `14-http-api.md`                  | Implementado               | API HTTP                |
 
 Las decisiones durables están en `adr/`. La hoja de ruta ordena slices verticales que deben dejar el repositorio ejecutable en cada etapa.
 

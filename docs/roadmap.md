@@ -11,7 +11,7 @@ Cada etapa es un slice verificable; no se implementarán capas aisladas que no p
 7. **Observabilidad** — Noop/Console/Langfuse v5 con OpenTelemetry y prompt metadata. Estado: completado.
 8. **Evaluaciones** — determinísticas, judge con fake, datasets y gate de regresión. Estado: completado.
 9. **Deep Agents** — adapter comparativo y dataset ejecutado contra ambos runtimes. Estado: completado.
-10. **API HTTP** — run, resume, run lookup y session lookup.
+10. **API HTTP** — run, resume, run lookup y session lookup. Estado: completado.
 11. **Endurecimiento** — fallos, timeouts, migraciones, cobertura, ejemplos y revisión documental completa.
 
 Los trece capítulos se ampliarán con código real en la etapa correspondiente. La CI debe permanecer verde al final de cada slice.

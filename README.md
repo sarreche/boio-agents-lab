@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 9 — Deep Agents**. La misma definición Researcher ya se ejecuta y evalúa mediante el grafo explícito o el harness `deepagents`, conservando una frontera de tools deny-by-default. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **slice 10 — API HTTP**. Run, resume y consultas de runs/sesiones están disponibles mediante un adapter Fastify validado y deny-by-default. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -182,6 +182,19 @@ Los nombres en `AgentDefinition.subagents` forman otra allowlist deny-by-default
 
 El composition root crea el lifecycle con `createObservability(environment)`, llama `start()` antes de ejecutar agentes y `shutdown()` al cerrar. `LANGFUSE_ENABLED=false`, `LANGFUSE_CAPTURE_INPUT=false` y `LANGFUSE_CAPTURE_OUTPUT=false` son los defaults seguros. La guía completa está en [`docs/10-observability.md`](docs/10-observability.md).
 
+## API HTTP
+
+`createHttpApi()` expone únicamente los agentes añadidos a `HttpAgentRegistry`:
+
+```text
+POST /agents/:agentName/run
+POST /agents/:agentName/resume
+GET  /runs/:runId
+GET  /sessions/:sessionId
+```
+
+La API valida bodies y parámetros con Zod. Responde `200` al completar y `202` cuando un run queda interrumpido. `InMemoryApiRunStore` habilita lookups locales sin confundir este índice con los checkpoints del runtime; producción puede inyectar otro `ApiRunStore`. Consulta [API HTTP](docs/14-http-api.md) para el contrato, códigos de error y límites actuales.
+
 ## Evaluaciones
 
 `runEvaluation()` conecta un dataset versionado, un agente y una lista de evaluadores. Distingue fallos de calidad de errores operativos, agrega latencia/tokens/costo cuando están disponibles y traza cada criterio como `evaluator`. `assertRegressionThresholds()` convierte una caída respecto del baseline en un error tipado y un exit code no cero. La explicación completa está en [`docs/11-evaluations.md`](docs/11-evaluations.md).
@@ -241,6 +254,7 @@ Empieza por:
 6. [Hoja de ruta](docs/roadmap.md)
 7. [Decisiones arquitectónicas](docs/adr/README.md)
 8. [Especificación inicial](docs/specification/initial-requirements.md)
+9. [API HTTP](docs/14-http-api.md)
 
 Cada documento distingue el diseño acordado de la implementación ya disponible. A medida que se implemente cada slice vertical, su documento explicará el problema, funcionamiento, archivos, decisiones, trade-offs y ejercicios.
 
