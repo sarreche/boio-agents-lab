@@ -17,6 +17,7 @@ Un framework de agentes suele volverse difícil de estudiar por dos motivos opue
 flowchart LR
     Agents[Agent definitions] --> Core[Core contracts]
     API[HTTP / examples] --> Core
+    API --> QueryIndex[Run and session query index]
     Core --> RuntimePort[AgentRuntime]
     RuntimePort --> DirectAdapter
     RuntimePort --> ToolCallingAdapter
@@ -57,7 +58,7 @@ Los puertos propios agregan algo de código, pero aíslan infraestructura y faci
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los cuatro adapters de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/observability/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL, delegación y trazas son explícitos en `LangGraphRuntime`, mientras `DeepAgentsRuntime` permite estudiar un harness de mayor nivel detrás de la misma allowlist.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los cuatro adapters de `src/runtime/`, `src/api/`, `src/agents/`, `src/subagents/`, `src/observability/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL, delegación y trazas son explícitos en `LangGraphRuntime`, mientras `DeepAgentsRuntime` permite estudiar un harness de mayor nivel detrás de la misma allowlist. La API HTTP es un adapter fino con su propio índice de consultas, separado de los checkpoints.
 
 ## Ejercicios
 
