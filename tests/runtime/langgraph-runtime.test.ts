@@ -12,6 +12,7 @@ import { createAgentGraph } from "../../src/graph/create-agent-graph.js";
 import { AGENT_GRAPH_STATE_VERSION } from "../../src/graph/state.js";
 import { ModelProviderRegistry } from "../../src/models/registry.js";
 import { StaticModelProvider } from "../../src/models/static-model-provider.js";
+import type { Tracer } from "../../src/observability/tracer.js";
 import { LangGraphRuntime } from "../../src/runtime/langgraph-runtime.js";
 import { createMockSearchTool } from "../../src/tools/builtins/mock-search.js";
 import { ToolRegistry } from "../../src/tools/registry.js";
@@ -35,13 +36,14 @@ function createTools() {
   ]);
 }
 
-function createRuntime(model: FakeToolCallingModel, modelRetryMaxAttempts = 3) {
+function createRuntime(model: FakeToolCallingModel, modelRetryMaxAttempts = 3, tracer?: Tracer) {
   return new LangGraphRuntime({
     providers: new ModelProviderRegistry([new StaticModelProvider("openrouter", model)]),
     tools: createTools(),
     modelRetryMaxAttempts,
     createRunId: () => "graph-run",
     now: () => new Date("2026-09-11T15:00:00.000Z"),
+    tracer,
   });
 }
 
@@ -88,6 +90,32 @@ describe("LangGraphRuntime", () => {
       stepCount: 2,
       toolCalls: [{ name: "mock_search", callId: "search-1", arguments: { query: "agent state" } }],
     });
+  });
+
+  it("traces the explicit agent, generation, and tool boundaries", async () => {
+    const observedTypes: string[] = [];
+    const tracer: Tracer = {
+      async observe(spec, operation) {
+        observedTypes.push(spec.type);
+        return operation({ update: () => undefined });
+      },
+    };
+    const model = new FakeToolCallingModel({
+      toolCalls: [
+        [{ name: "mock_search", args: { query: "agent state" }, id: "search-1" }],
+        [{ name: "researcher_output", args: finalOutput, id: "output-1" }],
+      ],
+    });
+    const definition = createResearcherDefinition(modelConfig);
+    const agent = createStructuredAgent({
+      definition,
+      outputSchema: researcherOutputSchema,
+      runtime: createRuntime(model, 3, tracer),
+    });
+
+    await agent.run({ input: "Trace this run." });
+
+    expect(observedTypes).toEqual(["agent", "generation", "tool", "generation"]);
   });
 
   it("retries transient model-node failures", async () => {

@@ -8,6 +8,8 @@ describe("parseEnvironment", () => {
 
     expect(environment.PORT).toBe(3000);
     expect(environment.LANGFUSE_ENABLED).toBe(false);
+    expect(environment.LANGFUSE_CAPTURE_INPUT).toBe(false);
+    expect(environment.LANGFUSE_CAPTURE_OUTPUT).toBe(false);
     expect(environment.AGENT_MAX_SUBAGENT_DEPTH).toBe(3);
   });
 

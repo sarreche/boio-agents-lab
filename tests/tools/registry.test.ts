@@ -12,6 +12,7 @@ import {
 } from "../../src/core/errors.js";
 import { ToolRegistry } from "../../src/tools/registry.js";
 import { defineTool } from "../../src/tools/tool.js";
+import type { Tracer } from "../../src/observability/tracer.js";
 
 const echoTool = defineTool({
   name: "echo",
@@ -28,6 +29,26 @@ describe("ToolRegistry", () => {
     await expect(
       registry.execute({ name: "echo", input: { text: "hello" }, authorizedTools: ["echo"] }),
     ).resolves.toEqual({ text: "hello" });
+  });
+
+  it("traces an authorized tool invocation", async () => {
+    const observedTypes: string[] = [];
+    const tracer: Tracer = {
+      async observe(spec, operation) {
+        observedTypes.push(spec.type);
+        return operation({ update: () => undefined });
+      },
+    };
+    const registry = new ToolRegistry([echoTool]);
+
+    await registry.execute({
+      name: "echo",
+      input: { text: "hello" },
+      authorizedTools: ["echo"],
+      tracer,
+    });
+
+    expect(observedTypes).toEqual(["tool"]);
   });
 
   it("denies a registered tool that is absent from the agent allowlist", async () => {

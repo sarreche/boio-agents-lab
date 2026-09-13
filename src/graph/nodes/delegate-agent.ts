@@ -1,6 +1,8 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 
 import { AgentProtocolError, InvalidToolArgumentsError } from "../../core/errors.js";
+import { NoopTracer } from "../../observability/noop-tracer.js";
+import type { Tracer } from "../../observability/tracer.js";
 import type { SubagentCoordinator } from "../../subagents/coordinator.js";
 import {
   DELEGATE_AGENT_TOOL_NAME,
@@ -22,7 +24,9 @@ function serializeContent(value: unknown): string {
 export function createDelegateAgentNode(options: {
   coordinator: SubagentCoordinator;
   parentDefinition: Parameters<SubagentCoordinator["delegate"]>[0]["parentDefinition"];
+  tracer?: Tracer;
 }) {
+  const tracer = options.tracer ?? new NoopTracer();
   return async (state: AgentGraphStateValue): Promise<AgentGraphStateUpdate> => {
     const lastMessage = state.messages.at(-1);
     if (!lastMessage || !AIMessage.isInstance(lastMessage)) {
@@ -53,14 +57,30 @@ export function createDelegateAgentNode(options: {
         );
       }
 
-      const childRun = childRunRecordSchema.parse(
-        await options.coordinator.delegate({
-          parentDefinition: options.parentDefinition,
-          parentRunId: state.runId,
-          parentDepth: state.delegationDepth,
-          inheritedMaxDepth: state.delegationMaxDepth,
-          ...validation.data,
-        }),
+      const childRun = await tracer.observe(
+        {
+          name: `delegation.${validation.data.agentName}`,
+          type: "span",
+          input: validation.data.task,
+          metadata: {
+            parentRunId: state.runId,
+            sessionId: state.sessionId,
+            childAgentName: validation.data.agentName,
+          },
+        },
+        async (observation) => {
+          const result = childRunRecordSchema.parse(
+            await options.coordinator.delegate({
+              parentDefinition: options.parentDefinition,
+              parentRunId: state.runId,
+              parentDepth: state.delegationDepth,
+              inheritedMaxDepth: state.delegationMaxDepth,
+              ...validation.data,
+            }),
+          );
+          observation.update({ output: result, metadata: { childRunId: result.childRunId } });
+          return result;
+        },
       );
       const content = serializeContent(childRun);
       return {

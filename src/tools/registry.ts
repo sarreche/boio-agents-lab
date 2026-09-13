@@ -6,6 +6,8 @@ import {
   ToolNotRegisteredError,
   ToolTimeoutError,
 } from "../core/errors.js";
+import { NoopTracer } from "../observability/noop-tracer.js";
+import type { Tracer } from "../observability/tracer.js";
 import type { RegisteredTool, ToolExecutionContext } from "./tool.js";
 
 export interface ToolRegistryOptions {
@@ -18,6 +20,7 @@ export interface ExecuteToolRequest {
   authorizedTools: readonly string[];
   timeoutMs?: number;
   context?: Omit<ToolExecutionContext, "signal">;
+  tracer?: Tracer;
 }
 
 export class ToolRegistry {
@@ -56,19 +59,36 @@ export class ToolRegistry {
     const controller = new AbortController();
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
+    const tracer = request.tracer ?? new NoopTracer();
     try {
-      return await Promise.race([
-        registeredTool.invoke(request.input, {
-          ...request.context,
-          signal: controller.signal,
-        }),
-        new Promise<never>((_resolve, reject) => {
-          timeout = setTimeout(() => {
-            reject(new ToolTimeoutError(request.name, timeoutMs));
-            controller.abort();
-          }, timeoutMs);
-        }),
-      ]);
+      return await tracer.observe(
+        {
+          name: `tool.${request.name}`,
+          type: "tool",
+          input: request.input,
+          metadata: {
+            runId: request.context?.runId,
+            sessionId: request.context?.sessionId,
+            timeoutMs,
+          },
+        },
+        async (observation) => {
+          const output = await Promise.race([
+            registeredTool.invoke(request.input, {
+              ...request.context,
+              signal: controller.signal,
+            }),
+            new Promise<never>((_resolve, reject) => {
+              timeout = setTimeout(() => {
+                reject(new ToolTimeoutError(request.name, timeoutMs));
+                controller.abort();
+              }, timeoutMs);
+            }),
+          ]);
+          observation.update({ output });
+          return output;
+        },
+      );
     } finally {
       if (timeout !== undefined) {
         clearTimeout(timeout);
@@ -79,11 +99,12 @@ export class ToolRegistry {
   toLangChainTools(
     authorizedTools: readonly string[],
     context: Omit<ToolExecutionContext, "signal"> = {},
+    tracer?: Tracer,
   ): ClientTool[] {
     return authorizedTools.map((name) => {
       const registeredTool = this.get(name);
       return registeredTool.createLangChainAdapter((input) =>
-        this.execute({ name, input, authorizedTools, context }),
+        this.execute({ name, input, authorizedTools, context, tracer }),
       );
     });
   }

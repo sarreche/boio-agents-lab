@@ -12,6 +12,7 @@ import {
 import { ModelProviderRegistry } from "../../src/models/registry.js";
 import { StaticModelProvider } from "../../src/models/static-model-provider.js";
 import { DirectModelRuntime } from "../../src/runtime/direct-model-runtime.js";
+import type { Tracer } from "../../src/observability/tracer.js";
 
 const definition = defineAgent({
   name: "test-agent",
@@ -52,6 +53,33 @@ describe("DirectModelRuntime", () => {
       startedAt: "2026-09-11T12:00:00.000Z",
       completedAt: "2026-09-11T12:00:00.000Z",
     });
+  });
+
+  it("nests a generation observation inside the agent run", async () => {
+    const observations: string[] = [];
+    const tracer: Tracer = {
+      async observe(spec, operation) {
+        observations.push(`start:${spec.type}`);
+        const result = await operation({ update: () => undefined });
+        observations.push(`end:${spec.type}`);
+        return result;
+      },
+    };
+    const runtime = new DirectModelRuntime({
+      providers: new ModelProviderRegistry([
+        new StaticModelProvider("openrouter", fakeModel().structuredResponse({ value: "ok" })),
+      ]),
+      tracer,
+    });
+
+    await runtime.runStructured({ definition, outputSchema, request: { input: "Return a value" } });
+
+    expect(observations).toEqual([
+      "start:agent",
+      "start:generation",
+      "end:generation",
+      "end:agent",
+    ]);
   });
 
   it("rejects malformed structured output even when a provider accepts it", async () => {

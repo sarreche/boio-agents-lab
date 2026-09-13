@@ -10,11 +10,14 @@ import {
   StructuredOutputValidationError,
 } from "../core/errors.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
+import { NoopTracer } from "../observability/noop-tracer.js";
+import type { Tracer } from "../observability/tracer.js";
 
 export interface DirectModelRuntimeDependencies {
   providers: ModelProviderRegistry;
   createRunId?: () => string;
   now?: () => Date;
+  tracer?: Tracer;
 }
 
 /**
@@ -27,11 +30,13 @@ export class DirectModelRuntime implements AgentRuntime {
   readonly #providers: ModelProviderRegistry;
   readonly #createRunId: () => string;
   readonly #now: () => Date;
+  readonly #tracer: Tracer;
 
   constructor(dependencies: DirectModelRuntimeDependencies) {
     this.#providers = dependencies.providers;
     this.#createRunId = dependencies.createRunId ?? randomUUID;
     this.#now = dependencies.now ?? (() => new Date());
+    this.#tracer = dependencies.tracer ?? new NoopTracer();
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -51,50 +56,88 @@ export class DirectModelRuntime implements AgentRuntime {
       name: `${run.definition.name}-output`,
     });
 
-    let untrustedOutput: unknown;
-    try {
-      untrustedOutput = await structuredModel.invoke(
-        [new SystemMessage(run.definition.systemPrompt), new HumanMessage(run.request.input)],
-        {
-          metadata: {
-            ...run.request.metadata,
-            agentName: run.definition.name,
-            model: run.definition.model.model,
-            promptVersion: run.definition.promptVersion,
-            provider: run.definition.model.provider,
-            runId,
-            sessionId: run.request.sessionId,
-          },
+    return this.#tracer.observe(
+      {
+        name: `agent.${run.definition.name}`,
+        type: "agent",
+        input: run.request.input,
+        metadata: {
+          agentName: run.definition.name,
+          parentRunId: run.request.lineage?.parentRunId,
+          promptName: run.definition.name,
+          promptVersion: run.definition.promptVersion,
+          provider: run.definition.model.provider,
+          runId,
+          sessionId: run.request.sessionId,
         },
-      );
-    } catch (cause) {
-      throw new AgentExecutionError(`Agent "${run.definition.name}" model call failed.`, {
-        cause,
-      });
-    }
+      },
+      async (agentObservation) => {
+        let untrustedOutput: unknown;
+        try {
+          untrustedOutput = await this.#tracer.observe(
+            {
+              name: `generation.${run.definition.name}`,
+              type: "generation",
+              input: run.request.input,
+              model: run.definition.model.model,
+              modelParameters: { temperature: run.definition.model.temperature },
+              metadata: {
+                promptVersion: run.definition.promptVersion,
+                promptName: run.definition.name,
+                provider: run.definition.model.provider,
+                runId,
+              },
+            },
+            async (generationObservation) => {
+              const response = await structuredModel.invoke(
+                [
+                  new SystemMessage(run.definition.systemPrompt),
+                  new HumanMessage(run.request.input),
+                ],
+                {
+                  metadata: {
+                    agentName: run.definition.name,
+                    runId,
+                    sessionId: run.request.sessionId,
+                  },
+                },
+              );
+              generationObservation.update({ output: response });
+              return response;
+            },
+          );
+        } catch (cause) {
+          throw new AgentExecutionError(`Agent "${run.definition.name}" model call failed.`, {
+            cause,
+          });
+        }
 
-    const validation = run.outputSchema.safeParse(untrustedOutput);
-    if (!validation.success) {
-      throw new StructuredOutputValidationError(
-        run.definition.name,
-        validation.error.issues.map((issue) => issue.message),
-        { cause: validation.error },
-      );
-    }
+        const validation = run.outputSchema.safeParse(untrustedOutput);
+        if (!validation.success) {
+          throw new StructuredOutputValidationError(
+            run.definition.name,
+            validation.error.issues.map((issue) => issue.message),
+            { cause: validation.error },
+          );
+        }
 
-    return {
-      status: "completed",
-      agentName: run.definition.name,
-      runId,
-      sessionId: run.request.sessionId,
-      runtime: "direct-model",
-      output: validation.data,
-      stepCount: 1,
-      toolCalls: [],
-      approvalDecisions: [],
-      childRuns: [],
-      startedAt,
-      completedAt: this.#now().toISOString(),
-    };
+        const result = {
+          status: "completed",
+          agentName: run.definition.name,
+          runId,
+          sessionId: run.request.sessionId,
+          runtime: "direct-model",
+          output: validation.data,
+          stepCount: 1,
+          toolCalls: [],
+          approvalDecisions: [],
+          childRuns: [],
+          startedAt,
+          completedAt: this.#now().toISOString(),
+        } as const;
+        agentObservation.update({ output: validation.data, metadata: { stepCount: 1 } });
+        return result;
+      },
+    );
   }
 }

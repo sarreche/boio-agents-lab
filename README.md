@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 6 — subagentes**. `LangGraphRuntime` ya soporta checkpoints, HITL y delegación explícita con registry, allowlists, child runs estructurados y profundidad heredada. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **slice 7 — observabilidad**. Los runtimes ya emiten trazas mediante un puerto propio con adapters Noop/Console/Langfuse v5, jerarquía OpenTelemetry y captura de payloads desactivada por defecto. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -161,6 +161,12 @@ Los routers son puros; los efectos ocurren en nodos nombrados. `runId` identific
 Las tools declaradas en `approvalRequiredTools` se detienen antes del efecto. El resultado de `run()` y `resume()` usa `status: "completed" | "interrupted"`; el caller puede presentar el payload de aprobación y luego continuar con la misma sesión. `MemorySaver` es intencionalmente local y efímero: no sobrevive reinicios ni sustituye un backend de producción.
 
 Los nombres en `AgentDefinition.subagents` forman otra allowlist deny-by-default. `SubagentCoordinator` inicia un run aislado con sus propias tools, conserva `parentRunId`/`childRunId` y aplica un techo de profundidad que no se reinicia en delegaciones anidadas. El resultado del child vuelve al padre como `ChildRunRecord`, sin copiar todo su historial.
+
+## Observabilidad
+
+`Tracer` mantiene el dominio independiente del backend. `NoopTracer` es el default, `ConsoleTracer` facilita estudio local y `LangfuseTracer` usa observaciones v5 sobre OpenTelemetry. Agentes, generaciones explícitas, tools y delegaciones quedan correlacionados; `runId` y `sessionId` no se confunden.
+
+El composition root crea el lifecycle con `createObservability(environment)`, llama `start()` antes de ejecutar agentes y `shutdown()` al cerrar. `LANGFUSE_ENABLED=false`, `LANGFUSE_CAPTURE_INPUT=false` y `LANGFUSE_CAPTURE_OUTPUT=false` son los defaults seguros. La guía completa está en [`docs/10-observability.md`](docs/10-observability.md).
 
 ### Slice ejecutable actual
 

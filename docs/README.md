@@ -13,7 +13,7 @@ La documentación sigue el orden conceptual en que conviene aprender el sistema.
 | `07-memory.md`                    | Esqueleto de diseño        | Memoria                 |
 | `08-subagents.md`                 | Implementado               | Delegación              |
 | `09-deep-agents.md`               | Fundamento documentado     | Runtime comparativo     |
-| `10-observability.md`             | Esqueleto de diseño        | Trazas y Langfuse       |
+| `10-observability.md`             | Implementado               | Trazas y Langfuse       |
 | `11-evaluations.md`               | Esqueleto de diseño        | Evals                   |
 | `12-human-in-the-loop.md`         | Implementado               | Interrupt/resume        |
 | `13-production-considerations.md` | Fundamento documentado     | Transversal             |
