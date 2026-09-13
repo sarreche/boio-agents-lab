@@ -19,10 +19,12 @@ import type {
   StructuredOutputSchema,
   ToolCallRecord,
 } from "../core/agent-runtime.js";
+import { executeWithDeadline } from "../core/execution-deadline.js";
 import {
   AgentApprovalNotSupportedError,
   AgentDelegationNotSupportedError,
   AgentExecutionError,
+  AgentRunTimeoutError,
   StructuredOutputValidationError,
   ToolNotAuthorizedError,
 } from "../core/errors.js";
@@ -116,6 +118,7 @@ export interface DeepAgentsRuntimeDependencies {
   now?: () => Date;
   createDeepAgent?: DeepAgentFactory;
   registerHarnessProfile?: HarnessProfileRegistrar;
+  runTimeoutMs?: number;
 }
 
 /** Adapts the opinionated Deep Agents harness to the MiniAgents runtime contract. */
@@ -127,6 +130,7 @@ export class DeepAgentsRuntime implements AgentRuntime {
   readonly #now: () => Date;
   readonly #createDeepAgent: DeepAgentFactory;
   readonly #registerHarnessProfile: HarnessProfileRegistrar;
+  readonly #runTimeoutMs: number;
 
   constructor(dependencies: DeepAgentsRuntimeDependencies) {
     this.#providers = dependencies.providers;
@@ -136,6 +140,7 @@ export class DeepAgentsRuntime implements AgentRuntime {
     this.#now = dependencies.now ?? (() => new Date());
     this.#createDeepAgent = dependencies.createDeepAgent ?? defaultFactory;
     this.#registerHarnessProfile = dependencies.registerHarnessProfile ?? registerHarnessProfile;
+    this.#runTimeoutMs = dependencies.runTimeoutMs ?? 300_000;
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -186,20 +191,27 @@ export class DeepAgentsRuntime implements AgentRuntime {
       async (observation) => {
         let state: Awaited<ReturnType<typeof agent.invoke>>;
         try {
-          state = await agent.invoke(
-            { messages: [{ role: "user", content: run.request.input }] },
-            {
-              recursionLimit: run.definition.maxSteps * 4 + 10,
-              metadata: {
-                ...run.request.metadata,
-                agentName: run.definition.name,
-                promptVersion: run.definition.promptVersion,
-                runId,
-                sessionId: run.request.sessionId,
-              },
-            },
-          );
+          state = await executeWithDeadline({
+            timeoutMs: this.#runTimeoutMs,
+            timeoutError: () => new AgentRunTimeoutError(run.definition.name, this.#runTimeoutMs),
+            operation: async (signal) =>
+              await agent.invoke(
+                { messages: [{ role: "user", content: run.request.input }] },
+                {
+                  signal,
+                  recursionLimit: run.definition.maxSteps * 4 + 10,
+                  metadata: {
+                    ...run.request.metadata,
+                    agentName: run.definition.name,
+                    promptVersion: run.definition.promptVersion,
+                    runId,
+                    sessionId: run.request.sessionId,
+                  },
+                },
+              ),
+          });
         } catch (cause) {
+          if (cause instanceof AgentRunTimeoutError) throw cause;
           throw new AgentExecutionError(
             `Agent "${run.definition.name}" Deep Agents execution failed.`,
             { cause },

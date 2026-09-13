@@ -5,6 +5,8 @@ export type {
   ModelConfig,
   ModelProviderName,
 } from "./core/agent-definition.js";
+export { executeWithDeadline } from "./core/execution-deadline.js";
+export type { ExecutionDeadlineOptions } from "./core/execution-deadline.js";
 export { HttpAgentRegistry } from "./api/agent-registry.js";
 export type { HttpAgent } from "./api/agent-registry.js";
 export {
@@ -54,15 +56,19 @@ export {
   AgentApprovalNotSupportedError,
   AgentDelegationNotSupportedError,
   AgentExecutionError,
+  AgentModelTimeoutError,
   AgentProtocolError,
+  AgentRunTimeoutError,
   AgentResumeNotSupportedError,
   AgentSessionAlreadyExistsError,
   AgentSessionMismatchError,
   AgentSessionNotFoundError,
   AgentSessionNotInterruptedError,
   AgentStepLimitError,
+  AgentStateMigrationError,
   EvaluationConfigurationError,
   EvaluatorExecutionError,
+  ExecutionConfigurationError,
   GraphConfigurationError,
   MiniAgentsError,
   ModelProviderAlreadyRegisteredError,
@@ -85,6 +91,14 @@ export {
   ToolNotRegisteredError,
   ToolTimeoutError,
 } from "./core/errors.js";
+export {
+  migratePersistedAgentState,
+  persistedAgentStateSchema,
+} from "./persistence/agent-state-migrations.js";
+export type {
+  AgentStateMigrationOptions,
+  PersistedAgentState,
+} from "./persistence/agent-state-migrations.js";
 export { defineEvaluationDataset } from "./evals/dataset.js";
 export type { EvaluationCase, EvaluationDataset } from "./evals/dataset.js";
 export {

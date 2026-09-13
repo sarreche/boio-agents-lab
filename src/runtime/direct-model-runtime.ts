@@ -3,10 +3,12 @@ import { randomUUID } from "node:crypto";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 import type { AgentRunResult, AgentRuntime, StructuredAgentRun } from "../core/agent-runtime.js";
+import { executeWithDeadline } from "../core/execution-deadline.js";
 import {
   AgentApprovalNotSupportedError,
   AgentDelegationNotSupportedError,
   AgentExecutionError,
+  AgentRunTimeoutError,
   StructuredOutputValidationError,
 } from "../core/errors.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
@@ -18,6 +20,7 @@ export interface DirectModelRuntimeDependencies {
   createRunId?: () => string;
   now?: () => Date;
   tracer?: Tracer;
+  runTimeoutMs?: number;
 }
 
 /**
@@ -31,12 +34,14 @@ export class DirectModelRuntime implements AgentRuntime {
   readonly #createRunId: () => string;
   readonly #now: () => Date;
   readonly #tracer: Tracer;
+  readonly #runTimeoutMs: number;
 
   constructor(dependencies: DirectModelRuntimeDependencies) {
     this.#providers = dependencies.providers;
     this.#createRunId = dependencies.createRunId ?? randomUUID;
     this.#now = dependencies.now ?? (() => new Date());
     this.#tracer = dependencies.tracer ?? new NoopTracer();
+    this.#runTimeoutMs = dependencies.runTimeoutMs ?? 300_000;
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -89,24 +94,32 @@ export class DirectModelRuntime implements AgentRuntime {
               },
             },
             async (generationObservation) => {
-              const response = await structuredModel.invoke(
-                [
-                  new SystemMessage(run.definition.systemPrompt),
-                  new HumanMessage(run.request.input),
-                ],
-                {
-                  metadata: {
-                    agentName: run.definition.name,
-                    runId,
-                    sessionId: run.request.sessionId,
-                  },
-                },
-              );
+              const response = await executeWithDeadline({
+                timeoutMs: this.#runTimeoutMs,
+                timeoutError: () =>
+                  new AgentRunTimeoutError(run.definition.name, this.#runTimeoutMs),
+                operation: async (signal) =>
+                  await structuredModel.invoke(
+                    [
+                      new SystemMessage(run.definition.systemPrompt),
+                      new HumanMessage(run.request.input),
+                    ],
+                    {
+                      signal,
+                      metadata: {
+                        agentName: run.definition.name,
+                        runId,
+                        sessionId: run.request.sessionId,
+                      },
+                    },
+                  ),
+              });
               generationObservation.update({ output: response });
               return response;
             },
           );
         } catch (cause) {
+          if (cause instanceof AgentRunTimeoutError) throw cause;
           throw new AgentExecutionError(`Agent "${run.definition.name}" model call failed.`, {
             cause,
           });

@@ -11,6 +11,7 @@ describe("parseEnvironment", () => {
     expect(environment.LANGFUSE_CAPTURE_INPUT).toBe(false);
     expect(environment.LANGFUSE_CAPTURE_OUTPUT).toBe(false);
     expect(environment.AGENT_MAX_SUBAGENT_DEPTH).toBe(3);
+    expect(environment.AGENT_RUN_TIMEOUT_MS).toBe(300_000);
   });
 
   it("rejects invalid boolean values instead of guessing", () => {

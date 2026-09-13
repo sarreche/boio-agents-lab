@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 10 — API HTTP**. Run, resume y consultas de runs/sesiones están disponibles mediante un adapter Fastify validado y deny-by-default. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **roadmap completado — slice 11, endurecimiento**. La biblioteca incluye runtimes explícito y de alto nivel, HITL, subagentes, trazas, evals, API HTTP, deadlines, migraciones de state y gates de cobertura. El almacenamiento durable continúa deliberadamente diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -102,6 +102,12 @@ La misma definición mediante el harness Deep Agents, también sin red:
 npm run example:deep-agents
 ```
 
+La frontera HTTP completa con `inject()`, sin abrir sockets:
+
+```bash
+npm run example:http-api
+```
+
 ## Comandos
 
 | Comando                       | Propósito                                                     |
@@ -116,6 +122,7 @@ npm run example:deep-agents
 | `npm run eval`                | Ejecutar evaluadores funcionales.                             |
 | `npm run eval:regression`     | Ejecutar el gate de regresión con salida no cero ante fallos. |
 | `npm run example:hitl`        | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
+| `npm run example:http-api`    | Ejecutar run y lookup por HTTP sin abrir sockets.             |
 | `npm run example:deep-agents` | Ejecutar Researcher mediante el harness Deep Agents offline.  |
 | `npm run example:evaluation`  | Ejecutar dataset, evaluadores y gate offline.                 |
 | `npm run example:langgraph`   | Ejecutar el StateGraph explícito sin red.                     |
@@ -195,6 +202,14 @@ GET  /sessions/:sessionId
 
 La API valida bodies y parámetros con Zod. Responde `200` al completar y `202` cuando un run queda interrumpido. `InMemoryApiRunStore` habilita lookups locales sin confundir este índice con los checkpoints del runtime; producción puede inyectar otro `ApiRunStore`. Consulta [API HTTP](docs/14-http-api.md) para el contrato, códigos de error y límites actuales.
 
+## Endurecimiento
+
+Cada runtime aplica un deadline global configurable; `LangGraphRuntime` añade timeout por model call y `ToolRegistry` mantiene un timeout independiente por tool. Los vencimientos abortan cooperativamente y devuelven errores tipados, sin depender de que una integración atienda correctamente la señal para liberar al caller.
+
+El state persistible actual es v3. `migratePersistedAgentState()` actualiza snapshots v1/v2 de forma secuencial, valida el resultado y rechaza versiones futuras. Este boundary prepara un adapter durable sin elegir una base de datos prematuramente.
+
+CI ejecuta `test:coverage` con un mínimo global de 80 % para statements, branches, functions y lines, además de evals, regresión y build. Las garantías y límites restantes están en [Consideraciones de producción](docs/13-production-considerations.md).
+
 ## Evaluaciones
 
 `runEvaluation()` conecta un dataset versionado, un agente y una lista de evaluadores. Distingue fallos de calidad de errores operativos, agrega latencia/tokens/costo cuando están disponibles y traza cada criterio como `evaluator`. `assertRegressionThresholds()` convierte una caída respecto del baseline en un error tipado y un exit code no cero. La explicación completa está en [`docs/11-evaluations.md`](docs/11-evaluations.md).
@@ -239,6 +254,8 @@ Consulta [Tools](docs/04-tools.md) para los límites de seguridad y ejercicios.
 ## Configuración y secretos
 
 `.env.example` documenta todas las variables sin contener credenciales. El entorno se valida una sola vez mediante Zod en `src/config/environment.ts`. Una integración se habilita de forma explícita; por ejemplo, Langfuse permanece desactivado si `LANGFUSE_ENABLED=false`.
+
+`AGENT_MODEL_TIMEOUT_MS`, `AGENT_TOOL_TIMEOUT_MS` y `AGENT_RUN_TIMEOUT_MS` separan los tres presupuestos de ejecución. El composition root debe pasar los valores validados a las dependencias del runtime y del tool registry que construya.
 
 OpenRouter compartirá el adaptador compatible con OpenAI usando una URL base diferente; OpenAI, Gemini, Groq y Ollama tendrán adapters propios detrás del mismo registry. Ninguna definición de agente construirá directamente un cliente de proveedor.
 

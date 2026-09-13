@@ -33,6 +33,7 @@ export const environmentSchema = z.object({
   AGENT_MAX_STEPS: z.coerce.number().int().positive().default(10),
   AGENT_MAX_SUBAGENT_DEPTH: z.coerce.number().int().nonnegative().default(3),
   AGENT_MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  AGENT_RUN_TIMEOUT_MS: z.coerce.number().int().positive().default(300_000),
   AGENT_TOOL_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   AGENT_MAX_RETRIES: z.coerce.number().int().nonnegative().default(2),
 });

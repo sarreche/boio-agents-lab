@@ -12,7 +12,7 @@ El nodo que contiene el interrupt empieza nuevamente al reanudar. Por eso el pay
 
 Se usan interrupciones dinámicas en vez de breakpoints estáticos. Una decisión cubre todas las tool calls del mismo mensaje: así no queda un batch parcialmente ejecutado. El audit trail incluye actor, decisión, razón, timestamp y IDs de las llamadas. En esta etapa el caller aporta la identidad del actor; autenticar y autorizar a ese actor pertenece al futuro transporte/API.
 
-`DirectModelRuntime` y `ToolCallingRuntime` no pueden aplicar este protocolo y rechazan de forma explícita toda definición con tools protegidas. Así una política de aprobación nunca se degrada silenciosamente al cambiar de runtime.
+`DirectModelRuntime` y `ToolCallingRuntime` no pueden aplicar este protocolo y rechazan de forma explícita toda definición con tools protegidas. Así una política de aprobación nunca se degrada silenciosamente al cambiar de runtime. La API HTTP transporta la decisión, pero la identidad `actor` sigue siendo una afirmación del caller; autenticarla y autorizarla corresponde a la aplicación host.
 
 ## Ubicación y lectura
 

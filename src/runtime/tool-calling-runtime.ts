@@ -18,10 +18,12 @@ import type {
   StructuredAgentRun,
   ToolCallRecord,
 } from "../core/agent-runtime.js";
+import { executeWithDeadline } from "../core/execution-deadline.js";
 import {
   AgentApprovalNotSupportedError,
   AgentDelegationNotSupportedError,
   AgentExecutionError,
+  AgentRunTimeoutError,
   StructuredOutputValidationError,
 } from "../core/errors.js";
 import type { ModelProviderRegistry } from "../models/registry.js";
@@ -35,6 +37,7 @@ export interface ToolCallingRuntimeDependencies {
   createRunId?: () => string;
   now?: () => Date;
   tracer?: Tracer;
+  runTimeoutMs?: number;
 }
 
 interface StructuredAgentRunner<TOutput extends Record<string, unknown>> {
@@ -66,6 +69,7 @@ export class ToolCallingRuntime implements AgentRuntime {
   readonly #createRunId: () => string;
   readonly #now: () => Date;
   readonly #tracer: Tracer;
+  readonly #runTimeoutMs: number;
 
   constructor(dependencies: ToolCallingRuntimeDependencies) {
     this.#providers = dependencies.providers;
@@ -73,6 +77,7 @@ export class ToolCallingRuntime implements AgentRuntime {
     this.#createRunId = dependencies.createRunId ?? randomUUID;
     this.#now = dependencies.now ?? (() => new Date());
     this.#tracer = dependencies.tracer ?? new NoopTracer();
+    this.#runTimeoutMs = dependencies.runTimeoutMs ?? 300_000;
   }
 
   async runStructured<TOutput extends Record<string, unknown>>(
@@ -125,23 +130,30 @@ export class ToolCallingRuntime implements AgentRuntime {
       async (observation) => {
         let result: Awaited<ReturnType<typeof agent.invoke>>;
         try {
-          const response = await agent.invoke(
-            { messages: [{ role: "user", content: run.request.input }] },
-            {
-              recursionLimit: run.definition.maxSteps * 3 + 1,
-              metadata: {
-                ...run.request.metadata,
-                agentName: run.definition.name,
-                model: run.definition.model.model,
-                promptVersion: run.definition.promptVersion,
-                provider: run.definition.model.provider,
-                runId,
-                sessionId: run.request.sessionId,
-              },
-            },
-          );
+          const response = await executeWithDeadline({
+            timeoutMs: this.#runTimeoutMs,
+            timeoutError: () => new AgentRunTimeoutError(run.definition.name, this.#runTimeoutMs),
+            operation: async (signal) =>
+              await agent.invoke(
+                { messages: [{ role: "user", content: run.request.input }] },
+                {
+                  signal,
+                  recursionLimit: run.definition.maxSteps * 3 + 1,
+                  metadata: {
+                    ...run.request.metadata,
+                    agentName: run.definition.name,
+                    model: run.definition.model.model,
+                    promptVersion: run.definition.promptVersion,
+                    provider: run.definition.model.provider,
+                    runId,
+                    sessionId: run.request.sessionId,
+                  },
+                },
+              ),
+          });
           result = response;
         } catch (cause) {
+          if (cause instanceof AgentRunTimeoutError) throw cause;
           throw new AgentExecutionError(`Agent "${run.definition.name}" execution failed.`, {
             cause,
           });

@@ -17,6 +17,7 @@
     "example:evaluation": "tsx examples/evaluation.ts",
     "example:deep-agents": "tsx examples/deep-agent.ts",
     "example:hitl": "tsx examples/human-in-the-loop.ts",
+    "example:http-api": "tsx examples/http-api.ts",
     "example:langgraph": "tsx examples/explicit-langgraph.ts",
     "example:researcher": "tsx examples/researcher.ts",
     "example:subagents": "tsx examples/subagent-coordinator.ts",
@@ -25,8 +26,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
     "start": "node dist/index.js",
-    "test": "vitest run --exclude tests/evals/** --exclude tests/regression/**",
-    "test:coverage": "vitest run --coverage --exclude tests/evals/** --exclude tests/regression/**",
+    "test": "vitest run --exclude \"tests/evals/**\" --exclude \"tests/regression/**\"",
+    "test:coverage": "vitest run --coverage --exclude \"tests/evals/**\" --exclude \"tests/regression/**\"",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

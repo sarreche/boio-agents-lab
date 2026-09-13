@@ -10,13 +10,13 @@ El runtime es responsable de structured output y, más adelante, tool binding, p
 
 ## Decisiones y trade-offs
 
-La interfaz devuelve la primitiva de LangChain en lugar de inventar un modelo universal, reduciendo adaptación y conservando tool calling. El precio es que `src/runtime` y el futuro `src/graph` conocen tipos de LangChain; `src/core` sigue independiente.
+La interfaz devuelve la primitiva de LangChain en lugar de inventar un modelo universal, reduciendo adaptación y conservando tool calling. El precio es que `src/runtime` y `src/graph` conocen tipos de LangChain; `src/core` sigue independiente.
 
 El registry rechaza providers duplicados y ausentes con errores tipados. No existe fallback silencioso, porque podría enviar datos a un proveedor distinto del configurado.
 
 ## Ubicación y lectura
 
-Implementado: `src/models/model-provider.ts`, `src/models/registry.ts`, `src/models/static-model-provider.ts`, `src/runtime/direct-model-runtime.ts` y sus tests. Planeado: adapters reales bajo `src/models/providers/`. Los tests usan modelos falsos, nunca APIs reales.
+Implementado: `src/models/model-provider.ts`, `src/models/registry.ts`, `src/models/static-model-provider.ts`, los runtimes y sus tests. Los adapters concretos por proveedor quedan fuera del laboratorio hasta existir requisitos de producto; añadir clases que solo reenvíen opciones de SDK no aportaría una frontera nueva. Los tests usan modelos falsos, nunca APIs reales.
 
 ## Ejercicios
 

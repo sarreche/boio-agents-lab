@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   AgentResumeNotSupportedError,
+  AgentRunTimeoutError,
   AgentSessionAlreadyExistsError,
   AgentSessionMismatchError,
   AgentSessionNotFoundError,
@@ -126,6 +127,9 @@ export function createHttpApi(options: CreateHttpApiOptions): FastifyInstance {
     }
     if (error instanceof SessionIdRequiredError || error instanceof AgentResumeNotSupportedError) {
       return await reply.code(422).send(errorResponse("UNPROCESSABLE_REQUEST", error.message));
+    }
+    if (error instanceof AgentRunTimeoutError) {
+      return await reply.code(504).send(errorResponse("RUN_TIMEOUT", error.message));
     }
 
     if (isHttpError(error)) {

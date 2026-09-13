@@ -12,7 +12,7 @@ La simplicidad sacrifica recall difuso, pero permite estudiar provenance, actual
 
 ## Ubicación y lectura
 
-Planeado: `src/memory/memory-store.ts`, `short-term.ts` y `long-term.ts`.
+La memoria de corto plazo implementada vive en el state/checkpointer explicado en `docs/03-agent-state.md` y `docs/06-persistence.md`. Long-term memory queda explícitamente fuera del roadmap completado: no se crea un `src/memory/` vacío ni un store sin política de identidad, provenance, retención y borrado.
 
 ## Ejercicios
 

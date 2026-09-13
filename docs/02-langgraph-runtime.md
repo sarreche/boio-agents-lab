@@ -27,7 +27,7 @@ flowchart TD
     Limit --> END
 ```
 
-`call-model` vincula solamente las tools autorizadas y una tool terminal derivada del nombre del agente, por ejemplo `researcher_output`. Su `retryPolicy` reintenta fallos del provider hasta el máximo configurado; un intento fallido no incrementa `stepCount` porque no produjo una transición útil.
+`call-model` vincula solamente las tools autorizadas y una tool terminal derivada del nombre del agente, por ejemplo `researcher_output`. Su `retryPolicy` reintenta fallos del provider hasta el máximo configurado; un intento fallido no incrementa `stepCount` porque no produjo una transición útil. Cada model call tiene deadline propio y recibe una señal de cancelación.
 
 `execute-tools` procesa las llamadas secuencialmente para conservar un orden visible de efectos. Usa `ToolRegistry`, por lo que autorización, Zod y timeout siguen aplicándose. Un error de tool se serializa y vuelve como `ToolMessage`: el modelo puede corregir argumentos o elegir otro camino.
 
@@ -41,7 +41,7 @@ Si el modelo llama la tool sintética `delegate_agent`, el router exige que sea 
 
 `maxSteps` cuenta model calls exitosas. Después de ejecutar tools, `routeAfterTools` impide regresar al modelo si el presupuesto ya se consumió. LangGraph también recibe un `recursionLimit` defensivo, pero no se usa como regla de negocio.
 
-El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se mantiene acotado y no envuelve tools: estas ya tienen timeout y sus errores son recuperables por el propio loop. En producción habrá que clasificar qué errores del provider son transitorios; hoy se conserva la política predeterminada de LangGraph.
+El retry pertenece a `call-model`, el nodo que conoce el efecto remoto. Se mantiene acotado y no envuelve tools: estas ya tienen timeout y sus errores son recuperables por el propio loop. El runtime añade un deadline global para impedir que retries, routing o una dependencia no cooperativa retengan al caller indefinidamente. La clasificación fina de errores transitorios queda en adapters concretos de provider; el laboratorio no inventa códigos universales.
 
 ## Decisiones y trade-offs
 
