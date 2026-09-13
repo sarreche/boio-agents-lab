@@ -47,13 +47,15 @@ Las dependencias concretas se ensamblan en un composition root, no dentro de age
 - Persistencia de checkpoints separada del almacenamiento de memoria de largo plazo.
 - Trazas mediante una interfaz propia; Langfuse es un adapter opcional.
 
+El puerto de observabilidad basado en callback ya está implementado. Ese scope conserva la jerarquía OpenTelemetry entre el run, sus generaciones, tools y children, mientras los adapters concretos permanecen fuera de `core`.
+
 ## Trade-offs
 
 Los puertos propios agregan algo de código, pero aíslan infraestructura y facilitan fakes. No se crea una interfaz local para cada tipo externo: LangGraph permanece visible dentro de `src/graph`, donde esconderlo reduciría el valor pedagógico.
 
 ## Dónde mirar
 
-Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los tres archivos de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL y delegación ya son explícitos en `LangGraphRuntime`.
+Hoy: `src/core/agent-definition.ts`, `src/core/agent-runtime.ts`, `src/models/registry.ts`, `src/tools/registry.ts`, `src/graph/`, los tres archivos de `src/runtime/`, `src/agents/`, `src/subagents/`, `src/observability/`, `src/config/environment.ts`, `AGENTS.md` y las ADR. Los tres runtimes ofrecen referencias ejecutables con distintos niveles de abstracción; checkpoints, HITL, delegación y trazas ya son explícitos en `LangGraphRuntime`.
 
 ## Ejercicios
 

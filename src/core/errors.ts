@@ -29,6 +29,8 @@ export class AgentStepLimitError extends AgentExecutionError {
 
 export class GraphConfigurationError extends MiniAgentsError {}
 
+export class ObservabilityConfigurationError extends MiniAgentsError {}
+
 export class AgentResumeNotSupportedError extends MiniAgentsError {}
 
 export class AgentApprovalNotSupportedError extends MiniAgentsError {

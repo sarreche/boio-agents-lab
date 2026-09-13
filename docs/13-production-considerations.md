@@ -24,7 +24,7 @@ Que el laboratorio use prácticas de producción no significa convertirlo en una
 
 ## Operación
 
-Las métricas mínimas serán latencia, tokens, modelo/provider, tools, errores, evaluaciones y relaciones padre-hijo. El sistema debe funcionar con `NoopTracer`; una caída de Langfuse no debe derribar una ejecución salvo que una política explícita lo exija.
+Las trazas implementadas registran latencia, modelo/provider, tools, errores y relaciones padre-hijo cuando están disponibles. Tokens y evaluaciones se completarán al normalizar usage de providers y construir el siguiente slice. El sistema funciona con `NoopTracer`; una caída de Langfuse o del writer local no derriba ni repite una ejecución.
 
 `MemorySaver` sirve para desarrollo y tests: se pierde al reiniciar, no coordina varias instancias y no implementa retención. Un futuro almacenamiento durable necesitará migraciones, conexiones acotadas, timeouts y estrategia de retención. Los checkpoints persistidos vuelven cada cambio de estado un problema de compatibilidad: nodos, channels y rutas viejas no deben borrarse sin una migración o ventana de drenaje.
 
@@ -38,7 +38,7 @@ La delegación actual es síncrona y secuencial. Producción necesitará presupu
 
 ## Dónde mirar
 
-Hoy: `.env.example`, `AGENTS.md`, CI, `src/graph/`, `src/core/errors.ts` y `src/tools/registry.ts`. Más adelante: adapters de persistence, clasificación de errores de provider y tracers.
+Hoy: `.env.example`, `AGENTS.md`, CI, `src/graph/`, `src/core/errors.ts`, `src/tools/registry.ts` y `src/observability/`. Más adelante: adapters de persistence, clasificación de errores de provider y normalización de usage/costos.
 
 ## Ejercicios
 

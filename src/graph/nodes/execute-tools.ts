@@ -2,6 +2,7 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 
 import { AgentProtocolError } from "../../core/errors.js";
 import type { ToolRegistry } from "../../tools/registry.js";
+import type { Tracer } from "../../observability/tracer.js";
 import {
   serializeAgentError,
   type AgentGraphStateUpdate,
@@ -17,6 +18,7 @@ function serializeToolContent(value: unknown): string {
 export function createExecuteToolsNode(options: {
   tools: ToolRegistry;
   authorizedTools: readonly string[];
+  tracer?: Tracer;
 }) {
   return async (state: AgentGraphStateValue): Promise<AgentGraphStateUpdate> => {
     const lastMessage = state.messages.at(-1);
@@ -41,6 +43,7 @@ export function createExecuteToolsNode(options: {
           input: toolCall.args,
           authorizedTools: options.authorizedTools,
           context: { runId: state.runId, sessionId: state.sessionId },
+          tracer: options.tracer,
         });
         const content = serializeToolContent(output);
         messages.push(new ToolMessage({ name: toolCall.name, tool_call_id: callId, content }));

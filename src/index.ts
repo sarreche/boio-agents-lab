@@ -52,6 +52,7 @@ export {
   MiniAgentsError,
   ModelProviderAlreadyRegisteredError,
   ModelProviderNotRegisteredError,
+  ObservabilityConfigurationError,
   InvalidToolArgumentsError,
   InvalidToolDefinitionError,
   InvalidToolOutputError,
@@ -71,6 +72,28 @@ export {
 export type { ModelProvider } from "./models/model-provider.js";
 export { ModelProviderRegistry } from "./models/registry.js";
 export { StaticModelProvider } from "./models/static-model-provider.js";
+export { ConsoleTracer } from "./observability/console-tracer.js";
+export type { ConsoleTraceEvent, ConsoleTracerOptions } from "./observability/console-tracer.js";
+export { LangfuseTracer } from "./observability/langfuse-tracer.js";
+export type {
+  LangfuseTracerOptions,
+  StartActiveObservation,
+} from "./observability/langfuse-tracer.js";
+export { NoopTracer } from "./observability/noop-tracer.js";
+export { createObservability } from "./observability/setup.js";
+export type { Observability } from "./observability/setup.js";
+export { redactSensitiveFields } from "./observability/tracer.js";
+export type {
+  ActiveObservation,
+  ObservationLevel,
+  ObservationSpec,
+  ObservationType,
+  ObservationUpdate,
+  TraceCapturePolicy,
+  TraceMetadata,
+  TraceMetadataValue,
+  Tracer,
+} from "./observability/tracer.js";
 export { DirectModelRuntime } from "./runtime/direct-model-runtime.js";
 export type { DirectModelRuntimeDependencies } from "./runtime/direct-model-runtime.js";
 export { LangGraphRuntime } from "./runtime/langgraph-runtime.js";

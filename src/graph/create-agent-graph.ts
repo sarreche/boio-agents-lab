@@ -5,6 +5,7 @@ import { END, START, StateGraph, type BaseCheckpointSaver } from "@langchain/lan
 import type { AgentDefinition } from "../core/agent-definition.js";
 import type { StructuredOutputSchema } from "../core/agent-runtime.js";
 import { GraphConfigurationError } from "../core/errors.js";
+import type { Tracer } from "../observability/tracer.js";
 import {
   DELEGATE_AGENT_TOOL_NAME,
   delegationArgumentsSchema,
@@ -35,6 +36,7 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
   checkpointer?: BaseCheckpointSaver;
   now?: () => Date;
   subagents?: SubagentCoordinator;
+  tracer?: Tracer;
 }) {
   const structuredOutputToolName = getStructuredOutputToolName(options.definition.name);
   if (options.definition.tools.includes(structuredOutputToolName)) {
@@ -82,6 +84,9 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
         model: options.model,
         tools: modelTools,
         systemPrompt: options.definition.systemPrompt,
+        tracer: options.tracer,
+        modelName: options.definition.model.model,
+        modelParameters: { temperature: options.definition.model.temperature },
       }),
       {
         retryPolicy: {
@@ -93,7 +98,11 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
     )
     .addNode(
       "execute-tools",
-      createExecuteToolsNode({ tools: options.tools, authorizedTools: options.definition.tools }),
+      createExecuteToolsNode({
+        tools: options.tools,
+        authorizedTools: options.definition.tools,
+        tracer: options.tracer,
+      }),
     )
     .addNode(
       "finalize",
@@ -108,6 +117,7 @@ export function createAgentGraph<TOutput extends Record<string, unknown>>(option
         : createDelegateAgentNode({
             coordinator: options.subagents,
             parentDefinition: options.definition,
+            tracer: options.tracer,
           }),
     )
     .addNode("request-approval", createRequestApprovalNode(options.now ?? (() => new Date())))

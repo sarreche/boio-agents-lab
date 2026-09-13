@@ -28,6 +28,8 @@ export const environmentSchema = z.object({
   LANGFUSE_SECRET_KEY: optionalSecret,
   LANGFUSE_BASE_URL: z.url().default("https://cloud.langfuse.com"),
   LANGFUSE_ENABLED: booleanFromEnvironment,
+  LANGFUSE_CAPTURE_INPUT: booleanFromEnvironment,
+  LANGFUSE_CAPTURE_OUTPUT: booleanFromEnvironment,
   AGENT_MAX_STEPS: z.coerce.number().int().positive().default(10),
   AGENT_MAX_SUBAGENT_DEPTH: z.coerce.number().int().nonnegative().default(3),
   AGENT_MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
