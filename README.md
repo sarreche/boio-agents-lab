@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 8 — evaluaciones**. El laboratorio ya ejecuta datasets versionados con evaluadores determinísticos, judge estructurado, reportes agregados y gates de regresión offline. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **slice 9 — Deep Agents**. La misma definición Researcher ya se ejecuta y evalúa mediante el grafo explícito o el harness `deepagents`, conservando una frontera de tools deny-by-default. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -96,25 +96,32 @@ El dataset y gate de evaluación offline:
 npm run example:evaluation
 ```
 
+La misma definición mediante el harness Deep Agents, también sin red:
+
+```bash
+npm run example:deep-agents
+```
+
 ## Comandos
 
-| Comando                      | Propósito                                                     |
-| ---------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                | Ejecutar el entry point en modo watch.                        |
-| `npm run build`              | Compilar `src/` a `dist/`.                                    |
-| `npm run typecheck`          | Validar TypeScript estricto sin emitir archivos.              |
-| `npm run lint`               | Ejecutar ESLint con reglas tipadas.                           |
-| `npm run format:check`       | Comprobar formato Prettier.                                   |
-| `npm test`                   | Ejecutar tests unitarios y de integración sin evals.          |
-| `npm run test:coverage`      | Ejecutar tests con umbral inicial de 80 %.                    |
-| `npm run eval`               | Ejecutar evaluadores funcionales.                             |
-| `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
-| `npm run example:hitl`       | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
-| `npm run example:evaluation` | Ejecutar dataset, evaluadores y gate offline.                 |
-| `npm run example:langgraph`  | Ejecutar el StateGraph explícito sin red.                     |
-| `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
-| `npm run example:subagents`  | Ejecutar supervisor + child run estructurado sin red.         |
-| `npm run example:summarizer` | Ejecutar el Summarizer determinista sin API keys.             |
+| Comando                       | Propósito                                                     |
+| ----------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                 | Ejecutar el entry point en modo watch.                        |
+| `npm run build`               | Compilar `src/` a `dist/`.                                    |
+| `npm run typecheck`           | Validar TypeScript estricto sin emitir archivos.              |
+| `npm run lint`                | Ejecutar ESLint con reglas tipadas.                           |
+| `npm run format:check`        | Comprobar formato Prettier.                                   |
+| `npm test`                    | Ejecutar tests unitarios y de integración sin evals.          |
+| `npm run test:coverage`       | Ejecutar tests con umbral inicial de 80 %.                    |
+| `npm run eval`                | Ejecutar evaluadores funcionales.                             |
+| `npm run eval:regression`     | Ejecutar el gate de regresión con salida no cero ante fallos. |
+| `npm run example:hitl`        | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
+| `npm run example:deep-agents` | Ejecutar Researcher mediante el harness Deep Agents offline.  |
+| `npm run example:evaluation`  | Ejecutar dataset, evaluadores y gate offline.                 |
+| `npm run example:langgraph`   | Ejecutar el StateGraph explícito sin red.                     |
+| `npm run example:researcher`  | Ejecutar Researcher + mock search sin red.                    |
+| `npm run example:subagents`   | Ejecutar supervisor + child run estructurado sin red.         |
+| `npm run example:summarizer`  | Ejecutar el Summarizer determinista sin API keys.             |
 
 ## Estructura objetivo
 
@@ -192,7 +199,7 @@ flowchart LR
 
 `DirectModelRuntime` hace exactamente una llamada y establece el contrato común. No contiene un loop manual ni se describe como LangGraph. Su función es permitir estudiar y probar el límite modelo/structured-output antes de introducir estado y edges.
 
-`ToolCallingRuntime` usa el harness `createAgent`; `LangGraphRuntime` construye el flujo equivalente con `StateGraph`, `StateSchema`, reducers, nodos y edges visibles. Ambos implementan el mismo contrato y permiten comparar abstracción con control explícito.
+`ToolCallingRuntime` usa el harness `createAgent`; `LangGraphRuntime` construye el flujo equivalente con `StateGraph`, `StateSchema`, reducers, nodos y edges visibles. `DeepAgentsRuntime` adapta `createDeepAgent`, bloquea sus capacidades implícitas y normaliza el resultado al mismo contrato. El dataset Researcher verifica la comparación sin red.
 
 ## Tools y autorización
 
