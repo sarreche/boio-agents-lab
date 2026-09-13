@@ -48,11 +48,14 @@ export {
   AgentSessionNotFoundError,
   AgentSessionNotInterruptedError,
   AgentStepLimitError,
+  EvaluationConfigurationError,
+  EvaluatorExecutionError,
   GraphConfigurationError,
   MiniAgentsError,
   ModelProviderAlreadyRegisteredError,
   ModelProviderNotRegisteredError,
   ObservabilityConfigurationError,
+  RegressionThresholdError,
   InvalidToolArgumentsError,
   InvalidToolDefinitionError,
   InvalidToolOutputError,
@@ -69,6 +72,38 @@ export {
   ToolNotRegisteredError,
   ToolTimeoutError,
 } from "./core/errors.js";
+export { defineEvaluationDataset } from "./evals/dataset.js";
+export type { EvaluationCase, EvaluationDataset } from "./evals/dataset.js";
+export {
+  createCostEvaluator,
+  createExpectedToolsEvaluator,
+  createForbiddenToolsEvaluator,
+  createLatencyEvaluator,
+  createMaxStepsEvaluator,
+  createRequiredFieldsEvaluator,
+  createSchemaEvaluator,
+} from "./evals/deterministic/index.js";
+export { createScore, evaluationScoreSchema } from "./evals/evaluator.js";
+export type {
+  EvaluationContext,
+  EvaluationMetrics,
+  EvaluationScore,
+  Evaluator,
+  TokenUsage,
+} from "./evals/evaluator.js";
+export { createLlmJudgeEvaluator, judgeResultSchema } from "./evals/llm-judge.js";
+export type { JudgeModel, JudgeRequest, JudgeResult } from "./evals/llm-judge.js";
+export { assertRegressionThresholds } from "./evals/regression.js";
+export type { RegressionThresholds } from "./evals/regression.js";
+export { runEvaluation } from "./evals/runner.js";
+export type {
+  EvaluationCaseResult,
+  EvaluationFailure,
+  EvaluationReport,
+  EvaluationRunnerOptions,
+  EvaluationSummary,
+} from "./evals/runner.js";
+export { researchDataset } from "./evals/datasets/research-dataset.js";
 export type { ModelProvider } from "./models/model-provider.js";
 export { ModelProviderRegistry } from "./models/registry.js";
 export { StaticModelProvider } from "./models/static-model-provider.js";
