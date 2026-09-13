@@ -31,6 +31,19 @@ export class GraphConfigurationError extends MiniAgentsError {}
 
 export class ObservabilityConfigurationError extends MiniAgentsError {}
 
+export class EvaluationConfigurationError extends MiniAgentsError {}
+
+export class EvaluatorExecutionError extends MiniAgentsError {}
+
+export class RegressionThresholdError extends MiniAgentsError {
+  readonly violations: readonly string[];
+
+  constructor(violations: readonly string[]) {
+    super(`Evaluation regression gate failed: ${violations.join("; ")}`);
+    this.violations = violations;
+  }
+}
+
 export class AgentResumeNotSupportedError extends MiniAgentsError {}
 
 export class AgentApprovalNotSupportedError extends MiniAgentsError {

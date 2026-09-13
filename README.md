@@ -2,7 +2,7 @@
 
 Laboratorio didáctico en TypeScript para construir y comparar miniagentes explícitos, observables, persistentes y evaluables. **MiniAgents** es el nombre conceptual de la biblioteca; `boio-agents-lab` es el repositorio y el paquete privado durante su desarrollo.
 
-> Estado: **slice 7 — observabilidad**. Los runtimes ya emiten trazas mediante un puerto propio con adapters Noop/Console/Langfuse v5, jerarquía OpenTelemetry y captura de payloads desactivada por defecto. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
+> Estado: **slice 8 — evaluaciones**. El laboratorio ya ejecuta datasets versionados con evaluadores determinísticos, judge estructurado, reportes agregados y gates de regresión offline. El almacenamiento durable continúa diferido hasta tener requisitos concretos.
 
 ## Objetivo
 
@@ -90,6 +90,12 @@ La delegación padre → child con contexto aislado:
 npm run example:subagents
 ```
 
+El dataset y gate de evaluación offline:
+
+```bash
+npm run example:evaluation
+```
+
 ## Comandos
 
 | Comando                      | Propósito                                                     |
@@ -104,6 +110,7 @@ npm run example:subagents
 | `npm run eval`               | Ejecutar evaluadores funcionales.                             |
 | `npm run eval:regression`    | Ejecutar el gate de regresión con salida no cero ante fallos. |
 | `npm run example:hitl`       | Interrumpir, aprobar y reanudar una tool protegida sin red.   |
+| `npm run example:evaluation` | Ejecutar dataset, evaluadores y gate offline.                 |
 | `npm run example:langgraph`  | Ejecutar el StateGraph explícito sin red.                     |
 | `npm run example:researcher` | Ejecutar Researcher + mock search sin red.                    |
 | `npm run example:subagents`  | Ejecutar supervisor + child run estructurado sin red.         |
@@ -167,6 +174,10 @@ Los nombres en `AgentDefinition.subagents` forman otra allowlist deny-by-default
 `Tracer` mantiene el dominio independiente del backend. `NoopTracer` es el default, `ConsoleTracer` facilita estudio local y `LangfuseTracer` usa observaciones v5 sobre OpenTelemetry. Agentes, generaciones explícitas, tools y delegaciones quedan correlacionados; `runId` y `sessionId` no se confunden.
 
 El composition root crea el lifecycle con `createObservability(environment)`, llama `start()` antes de ejecutar agentes y `shutdown()` al cerrar. `LANGFUSE_ENABLED=false`, `LANGFUSE_CAPTURE_INPUT=false` y `LANGFUSE_CAPTURE_OUTPUT=false` son los defaults seguros. La guía completa está en [`docs/10-observability.md`](docs/10-observability.md).
+
+## Evaluaciones
+
+`runEvaluation()` conecta un dataset versionado, un agente y una lista de evaluadores. Distingue fallos de calidad de errores operativos, agrega latencia/tokens/costo cuando están disponibles y traza cada criterio como `evaluator`. `assertRegressionThresholds()` convierte una caída respecto del baseline en un error tipado y un exit code no cero. La explicación completa está en [`docs/11-evaluations.md`](docs/11-evaluations.md).
 
 ### Slice ejecutable actual
 

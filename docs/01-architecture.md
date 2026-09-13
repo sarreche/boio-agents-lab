@@ -34,6 +34,8 @@ flowchart LR
     Delegation --> RuntimePort
     LangGraphAdapter --> Tracing[Tracer port]
     DeepAgentsAdapter --> Tracing
+    Evaluation[Evaluation runner] --> RuntimePort
+    Evaluation --> Tracing
 ```
 
 Las dependencias concretas se ensamblan en un composition root, no dentro de agentes ni contratos. Esto permite sustituir un provider, un tracer o un checkpointer en tests.

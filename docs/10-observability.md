@@ -8,13 +8,13 @@ Una respuesta final no permite explicar por qué un agente eligió un modelo, ll
 
 `Tracer.observe()` recibe una especificación y un callback. El callback conserva el contexto activo de OpenTelemetry para que las observaciones anidadas formen una jerarquía real.
 
-| Operación                        | Tipo         | Metadata principal                                      |
-| -------------------------------- | ------------ | ------------------------------------------------------- |
-| Run o resume de agente           | `agent`      | agent, run, session, prompt version, provider, parent   |
-| Llamada explícita al modelo      | `generation` | model, temperature, step, prompt version                |
-| Ejecución autorizada de una tool | `tool`       | tool, run, session, timeout                             |
-| Delegación                       | `span`       | parent run, child agent y child run al finalizar        |
-| Evaluadores del próximo slice    | `evaluator`  | soportado por el contrato; instrumentación aún diferida |
+| Operación                        | Tipo         | Metadata principal                                    |
+| -------------------------------- | ------------ | ----------------------------------------------------- |
+| Run o resume de agente           | `agent`      | agent, run, session, prompt version, provider, parent |
+| Llamada explícita al modelo      | `generation` | model, temperature, step, prompt version              |
+| Ejecución autorizada de una tool | `tool`       | tool, run, session, timeout                           |
+| Delegación                       | `span`       | parent run, child agent y child run al finalizar      |
+| Evaluación de un criterio        | `evaluator`  | dataset, case ID, score y resultado                   |
 
 `DirectModelRuntime` y `LangGraphRuntime` exponen cada llamada propia al modelo como `generation`. `ToolCallingRuntime` traza el agente y las tools que atraviesan el registry, pero su harness `createAgent` oculta el límite exacto de cada model call; no se etiqueta todo el loop como una generación ficticia.
 

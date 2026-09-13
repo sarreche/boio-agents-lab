@@ -9,7 +9,7 @@ Cada etapa es un slice verificable; no se implementarán capas aisladas que no p
 5. **Checkpoints + HITL** — MemorySaver, sesión, interrupt y resume; backend durable diferido hasta contar con requisitos concretos. Estado: completado.
 6. **Subagentes** — coordinator, child runs, resultados estructurados y profundidad. Estado: completado.
 7. **Observabilidad** — Noop/Console/Langfuse v5 con OpenTelemetry y prompt metadata. Estado: completado.
-8. **Evaluaciones** — determinísticas, judge con fake, datasets y gate de regresión.
+8. **Evaluaciones** — determinísticas, judge con fake, datasets y gate de regresión. Estado: completado.
 9. **Deep Agents** — adapter comparativo y dataset ejecutado contra ambos runtimes.
 10. **API HTTP** — run, resume, run lookup y session lookup.
 11. **Endurecimiento** — fallos, timeouts, migraciones, cobertura, ejemplos y revisión documental completa.
